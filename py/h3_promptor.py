@@ -15,13 +15,14 @@ from .prompt_builder import PromptBuilder
 from .post_processor import PostProcessor
 from .provider_openai import OpenAIProvider
 from .provider_ollama import OllamaProvider
+from .provider_lmstudio import LMStudioProvider
 from .provider_gemini import GeminiProvider
 from .provider_claude import ClaudeProvider
 from .utils import log_info, log_error
 
 
 # Provider options
-PROVIDERS = ["openai", "ollama", "gemini", "claude"]
+PROVIDERS = ["openai", "ollama", "lmstudio", "gemini", "claude"]
 
 
 def _create_provider(provider_name: str, config_manager, api_key_override: str = ""):
@@ -36,6 +37,8 @@ def _create_provider(provider_name: str, config_manager, api_key_override: str =
 
     if provider_name == "ollama":
         return OllamaProvider(api_base=api_base, model=model)
+    elif provider_name == "lmstudio":
+        return LMStudioProvider(api_base=api_base, model=model)
     elif provider_name == "gemini":
         return GeminiProvider(api_base=api_base, api_key=api_key, model=model)
     elif provider_name == "claude":
