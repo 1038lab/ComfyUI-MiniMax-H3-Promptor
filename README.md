@@ -1,8 +1,10 @@
-# 🎬 ComfyUI MiniMax H3-Promptor (V1.0.0)
+# 🎬 ComfyUI MiniMax H3-Promptor
 
 A powerful, node-based automation suite for generating cinema-production-grade prompts explicitly formatted for the **MiniMax H3 Video Generation System**.
 
 This project provides a robust, decoupled architecture separating **multimodal visual analysis** from pure **text-based prompt structuring**, allowing for extreme customizability, precise scene description, and low API operating costs.
+
+![ComfyUI MiniMax H3-Promptor](example_workflows/MiniMax-H3-Promptor.jpg)
 
 ---
 
