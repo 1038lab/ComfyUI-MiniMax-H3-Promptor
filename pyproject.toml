@@ -1,0 +1,15 @@
+[project]
+name = "ComfyUI-MiniMax-H3-Promptor"
+description = "ComfyUI-Minimax-H3-Promptor custom node for ComfyUI provides automation suite for generating MiniMax H3 prompts."
+version = "1.0.0"
+license = {file = "LICENSE"}
+
+dependencies = ["requests>=2.28.0"]
+
+[project.urls]
+Repository = "https://github.com/1038lab/ComfyUI-MiniMax-H3-Promptor"
+
+[tool.comfy]
+PublisherId = "ailab"
+DisplayName = "ComfyUI-MiniMax-H3-Promptor"
+Icon = ""
