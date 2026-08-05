@@ -1,0 +1,29 @@
+{
+  "version": "1.0.0",
+  "providers": {
+    "openai": {
+      "api_base": "https://api.openai.com/v1",
+      "api_key": "",
+      "default_model": "gpt-4o"
+    },
+    "ollama": {
+      "api_base": "http://localhost:11434",
+      "default_model": "llama3.1"
+    },
+    "gemini": {
+      "api_base": "https://generativelanguage.googleapis.com/v1beta",
+      "api_key": "",
+      "default_model": "gemini-2.5-flash"
+    },
+    "claude": {
+      "api_base": "https://api.anthropic.com/v1",
+      "api_key": "",
+      "default_model": "claude-3-5-sonnet-20241022"
+    }
+  },
+  "defaults": {
+    "provider": "openai",
+    "temperature": 0.7,
+    "max_tokens": 4096
+  }
+}

@@ -1,0 +1,64 @@
+## Task Type: Image-to-Audio-Video (I2VA)
+
+This is an IMAGE-TO-VIDEO generation task. ONE reference image is provided as the first frame anchor.
+
+### Critical First-Frame Alignment
+
+You MUST include this exact alignment directive at the very beginning of the prompt, before any section headers:
+
+"For the target video, at 0.00 seconds into the target video, Image1 (from [Shot 1]) is fully referenced."
+
+This tells MiniMax H3 to pixel-lock the first frame to the uploaded image.
+
+### Structure Requirements
+
+Required sections:
+- First-frame alignment directive (before sections)
+- [REFERENCE USE] — Declare what Image1 controls
+- [IDENTITY / CONTINUITY LOCKS] — Lock subject identity from Image1
+- [SCENE] — Describe setting and what happens after the locked first frame
+- [SHOT LIST] — Start from the locked first frame, describe subsequent motion
+- [ACTING] — Performance direction
+- [LIGHT AND IMAGE] — Must match Image1's lighting initially, then evolve
+- [CAMERA] — Camera movement starting from Image1's composition
+- [PRODUCTION SOUND] — Soundscape, effects, music
+- [NEGATIVES] — No identity drift from Image1
+
+### Key Rules
+
+1. Shot 1 MUST describe a state that precisely matches Image1
+2. All subsequent action must flow naturally from Image1's pose, composition, and lighting
+3. Do NOT introduce new characters not visible in Image1
+4. Maintain Image1's wardrobe, environment, and props throughout
+
+### Example I2VA Prompt
+
+For the target video, at 0.00 seconds into the target video, Image1 (from [Shot 1]) is fully referenced.
+
+[REFERENCE USE]
+Image1 defines the subject's face, hair, body, wardrobe, pose, and the background environment. Preserve all visual elements exactly.
+
+[IDENTITY / CONTINUITY LOCKS]
+Keep exactly one subject. Preserve identity, wardrobe, hairstyle, and all visible props from Image1 throughout the video.
+
+[SCENE]
+A young woman in a cream linen blouse stands on a sunlit balcony overlooking a Mediterranean harbor at golden hour. She holds a ceramic coffee cup near her chest and gazes outward. A gentle sea breeze lifts strands of her dark hair.
+
+[SHOT LIST]
+0–3s — Medium shot matching Image1's exact composition; the woman is still, absorbing the view; a gentle breeze begins to lift her hair; the camera holds steady.
+3–5s — The camera pushes in slowly with small amplitude; she raises the cup to her lips and takes a slow sip; her eyes close briefly in contentment; the warm light catches the steam rising from the cup.
+
+[ACTING]
+Serene, unhurried. Minimal movement — only the cup lift and hair responding to the breeze. Natural breathing, relaxed shoulders.
+
+[LIGHT AND IMAGE]
+Match Image1's golden hour lighting exactly. Warm amber tones, soft shadows, gentle lens flare from the low sun. Shallow depth of field with the harbor softly bokeh'd behind her.
+
+[CAMERA]
+Begin locked to Image1's framing. Only a gentle, slow push-in is permitted. No sudden movements or dramatic angle changes.
+
+[PRODUCTION SOUND]
+Gentle harbor ambience: distant lapping water, far-off boat horns, light wind. Ceramic cup tink when she lifts it. No music. No dialogue.
+
+[NEGATIVES]
+No identity drift from Image1. No wardrobe changes. No extra people. No abrupt camera movements. No subtitles.

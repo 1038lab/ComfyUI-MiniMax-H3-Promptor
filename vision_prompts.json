@@ -1,0 +1,31 @@
+/*
+ComfyUI-Minimax-H3-Promptor
+This custom node for ComfyUI provides automation suite for generating MiniMax H3 prompts.
+
+This integration script follows GPL-3.0 License.
+When using or modifying this code, please respect both the original model licenses
+and this integration's license terms.
+
+Source: https://github.com/1038lab/ComfyUI-Minimax-H3-Promptor
+*/
+{
+    "image_prompts": {
+        "Subject / Identity": "Focus exclusively on describing the main subject's appearance, facial features, and clothing.",
+        "Comprehensive": "Analyze the entire image in extreme detail (subjects, environment, lighting, composition, mood).",
+        "Action / Emotion": "Analyze only the physical actions, body language, posture, and facial expressions of the subject.",
+        "Face & Expression Focus": "Analyze the facial features, gaze, and micro-expressions intimately.",
+        "Prop & Object Interaction": "Focus purely on what objects the subject is holding or interacting with, and how they interact.",
+        "Lighting & Camera": "Describe only the camera angle/framing (e.g., close-up, wide shot) and the ambient lighting setup.",
+        "Cinematic Composition": "Analyze framing techniques, depth of field, foreground/background separation, and lens characteristics (wide, telephoto, macro).",
+        "Style & Aesthetics": "Focus solely on the artistic style, color palette, texture, and overall mood.",
+        "Color Palette & Texture": "Focus exclusively on the dominating colors, contrast ratios, and visual textures present."
+    },
+    "video_prompts": {
+        "Motion Focus": "Focus strictly on the choreography, speed, and physical movement executed by the subject.",
+        "Comprehensive": "Analyze the sequential pacing, camera movement, and subject motion across all provided keyframes.",
+        "Camera Tracking": "Focus entirely on tracking how the virtual camera moves (panning, zooming, dollying, tracking).",
+        "Temporal Flow": "Analyze the overall pacing, transitions, and scene progression across the extracted frames.",
+        "Physics & Momentum": "Analyze the realistic physics, gravity, weight, and momentum of the moving subjects/objects.",
+        "Background Dynamics": "Focus exclusively on what is moving in the environment or background, ignoring the main subject."
+    }
+}

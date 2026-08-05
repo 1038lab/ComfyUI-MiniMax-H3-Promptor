@@ -1,0 +1,59 @@
+## Task Type: First/Last Frame (FL2VA)
+
+This is a FIRST/LAST FRAME generation task. TWO reference images define the start and end states.
+
+### Critical Frame Alignment
+
+You MUST include this exact alignment directive at the very beginning of the prompt, before any section headers:
+
+"How the reference pictures align with the target video — Picture 1 (from Shot 1) aligns with the 0.00-second mark of the target video; Picture 2 (from Shot N) aligns with the {DURATION}.00-second mark of the target video."
+
+Replace {DURATION} with the actual video duration (e.g., 5.00, 10.00, 15.00).
+
+### Structure Requirements
+
+Required sections:
+- Frame alignment directive (before sections)
+- [BOUNDARY FRAMES] — Declare Image1 as first frame, Image2 as last frame
+- [REFERENCE USE] — What each image controls
+- [IDENTITY / CONTINUITY LOCKS] — Maintain consistency across the transition
+- [ACTION] — Describe the single causal motion connecting the two frames
+- [SHOT LIST] — Timed coverage of the transition
+- [CAMERA AND SOUND] — Camera and audio for the transition
+- [NEGATIVES] — No hard cuts, no teleportation
+
+### Key Rules
+
+1. The video MUST begin exactly matching Image1 and end exactly matching Image2
+2. The transition must be ONE continuous causal motion — no teleportation
+3. Strongly prefer a single long take (no cuts) to ensure smooth interpolation
+4. Subject count, identity, and props must remain consistent between both frames
+5. Calculate the exact duration timestamp for Image2 alignment (duration in seconds, two decimal places)
+6. Avoid hard cuts, fade transitions, or cross-dissolves — these confuse the interpolation
+
+### Example FL2VA Prompt
+
+How the reference pictures align with the target video — Picture 1 (from Shot 1) aligns with the 0.00-second mark of the target video; Picture 2 (from Shot 4) aligns with the 15.00-second mark of the target video.
+
+[BOUNDARY FRAMES]
+Image1 is the exact first frame. Preserve its subject count, identity, wardrobe, composition, lighting, and object positions at the start.
+Image2 is the exact last frame. The shot must arrive naturally at its composition, lighting, and object positions by the end.
+
+[REFERENCE USE]
+Image1 defines the starting composition, subject identity, wardrobe, and environment.
+Image2 defines the ending composition, subject state, and final object positions.
+
+[ACTION]
+In one continuous causal motion, the subject transitions from the pose and state in Image1 to the pose and state in Image2. Maintain the same subject and continuous objects throughout.
+
+[SHOT LIST]
+[Shot 1] The scene opens matching Image1 exactly. The camera holds steady, establishing the starting tableau.
+[Shot 2] At 00:04.000, the subject begins the primary action that will carry them toward the state in Image2. The camera tracks the movement smoothly.
+[Shot 3] At 00:08.000, the transition continues with the subject now halfway between the two states. Environmental details shift accordingly.
+[Shot 4] At 00:12.000, the subject arrives at the final state matching Image2. The camera settles into Image2's composition.
+
+[CAMERA AND SOUND]
+Smooth, continuous camera movement bridging Image1's framing to Image2's framing. No hard cuts. Native stereo ambience appropriate to the environment. Motivated sound effects for all physical actions.
+
+[NEGATIVES]
+No hard cut. No teleportation. No duplicate subject. No identity change. No prop swap. No discontinuous lighting. No fade or cross-dissolve transitions.

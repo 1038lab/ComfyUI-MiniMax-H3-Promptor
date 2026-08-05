@@ -1,0 +1,33 @@
+## Task Type: Image-to-Video (I2V)
+
+This is an IMAGE-TO-VIDEO generation task. ONE reference image is provided as the first frame anchor.
+NO AUDIO is referenced.
+
+### Critical First-Frame Alignment
+
+You MUST include this exact alignment directive at the very beginning of the prompt, before any section headers:
+
+"For the target video, at 0.00 seconds into the target video, Image1 (from [Shot 1]) is fully referenced."
+
+This tells MiniMax H3 to pixel-lock the first frame to the uploaded image.
+
+### Structure Requirements
+
+Required sections:
+- First-frame alignment directive (before sections)
+- [REFERENCE USE] — Declare what Image1 controls
+- [IDENTITY / CONTINUITY LOCKS] — Lock subject identity from Image1
+- [SCENE] — Describe setting and what happens after the locked first frame
+- [SHOT LIST] — Start from the locked first frame, describe subsequent motion
+- [ACTING] — Performance direction
+- [LIGHT AND IMAGE] — Must match Image1's lighting initially, then evolve
+- [CAMERA] — Camera movement starting from Image1's composition
+- [NEGATIVES] — No identity drift from Image1
+
+### Key Rules
+
+1. Shot 1 MUST describe a state that precisely matches Image1
+2. All subsequent action must flow naturally from Image1's pose, composition, and lighting
+3. Do NOT introduce new characters not visible in Image1
+4. Maintain Image1's wardrobe, environment, and props throughout
+5. Do NOT include a [PRODUCTION SOUND] section.
