@@ -70,6 +70,44 @@ class LMStudioProvider(LLMProvider):
             pass
         return None
 
+    def list_models(self) -> list[str]:
+        """
+        List models exposed by the LM Studio server.
+
+        Loaded models are returned first so they appear at the top of
+        dropdowns; an empty selection still triggers auto-detect at runtime.
+        """
+        loaded: list[str] = []
+        others: list[str] = []
+        native_base = self.api_base[:-3] if self.api_base.endswith("/v1") else self.api_base
+        try:
+            response = requests.get(f"{native_base}/api/v0/models", timeout=10)
+            if response.ok:
+                for model in response.json().get("data", []):
+                    model_id = model.get("id", "")
+                    if not model_id:
+                        continue
+                    if model.get("state") == "loaded":
+                        loaded.append(model_id)
+                    else:
+                        others.append(model_id)
+                if loaded or others:
+                    return loaded + others
+        except Exception:
+            pass
+
+        try:
+            response = requests.get(f"{self.api_base}/models", timeout=10)
+            if response.ok:
+                return [
+                    model.get("id", "")
+                    for model in response.json().get("data", [])
+                    if model.get("id")
+                ]
+        except Exception:
+            pass
+        return []
+
     def chat(
         self,
         system_prompt: str,

@@ -97,7 +97,7 @@ class H3_Promptor:
                 }),
                 "model_name": ("STRING", {
                     "default": "",
-                    "tooltip": "Model override (e.g. gpt-4o, claude-3-5).",
+                    "tooltip": "Model override. For Ollama/LM Studio, a searchable dropdown appears when that provider is selected.",
                 }),
                 "temperature": ("FLOAT", {
                     "default": 0.7, "min": 0.0, "max": 1.0, "step": 0.05

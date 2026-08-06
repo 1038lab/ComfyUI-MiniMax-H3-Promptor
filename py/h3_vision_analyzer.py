@@ -137,7 +137,7 @@ class H3_Vision_Analyzer:
                 }),
                 "model_name": ("STRING", {
                     "default": "",
-                    "tooltip": "Model override (e.g. gpt-4o, qwen-vl-max).",
+                    "tooltip": "Model override. For Ollama/LM Studio, a searchable dropdown appears when that provider is selected.",
                 }),
                 "temperature": ("FLOAT", {
                     "default": 0.2, "min": 0.0, "max": 1.0, "step": 0.05
