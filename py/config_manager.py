@@ -30,6 +30,10 @@ DEFAULT_CONFIG = {
             "api_base": "http://localhost:11434",
             "default_model": "llama3.1",
         },
+        "lmstudio": {
+            "api_base": "http://localhost:1234/v1",
+            "default_model": "",
+        },
         "gemini": {
             "api_base": "https://generativelanguage.googleapis.com/v1beta",
             "api_key": "",

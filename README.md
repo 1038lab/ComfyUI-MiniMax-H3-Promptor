@@ -28,7 +28,7 @@ A highly configurable multimodal analysis engine. This node acts as your virtual
 | `video_ref` | IMAGE | Video batch tensor. Up to 4 keyframes are extracted and analyzed. |
 | `mode_video` | COMBO | Video-specific analysis logic. |
 | `output_language` | COMBO | Language for the analysis output (`English` or `Chinese`). |
-| `provider` | COMBO | `openai`, `ollama`, `gemini`, or `claude`. |
+| `provider` | COMBO | `openai`, `ollama`, `lmstudio`, `gemini`, or `claude`. |
 | `api_key` | STRING | API Key override (leaves `config.json` untouched). |
 | `model_name` | STRING | VLM Model override (e.g. `gpt-4o`, `gemini-2.5-flash`). |
 | `temperature` | FLOAT | Sampling temperature. Default `0.2` for precise factual analysis. |
@@ -58,7 +58,7 @@ The core structure engine. It operates at blazing speeds because it takes the us
 | `duration` | INT | Desired video length (4-15 seconds). |
 | `vision_context` | STRING | Connect the output of `H3_Vision_Analyzer` here. Leave unconnected for pure T2V. |
 | `output_language` | COMBO | Output the resulting prompt in `English` or `Chinese`. |
-| `provider` | COMBO | `openai`, `ollama`, `gemini`, or `claude`. |
+| `provider` | COMBO | `openai`, `ollama`, `lmstudio`, `gemini`, or `claude`. |
 | `api_key` | STRING | API Key override. |
 | `model_name` | STRING | Model override (e.g. `gpt-4o`, `claude-sonnet-4-20250514`). |
 | `temperature` | FLOAT | Sampling temperature. Default `0.7` for creative writing. |
@@ -68,16 +68,22 @@ The core structure engine. It operates at blazing speeds because it takes the us
 
 ## 🔌 Supported LLM Providers
 
-All 4 providers are implemented as **independent, native API integrations** — no wrappers, no compatibility layers. Each provider file is fully self-contained for easy maintenance.
+All 5 providers are implemented as **independent, native API integrations** — no wrappers, no compatibility layers. Each provider file is fully self-contained for easy maintenance.
 
 | Provider | File | API Format | Default Model | Auth Method |
 |---|---|---|---|---|
 | **OpenAI** | `provider_openai.py` | `/v1/chat/completions` | `gpt-4o` | `Bearer` Token |
 | **Ollama** | `provider_ollama.py` | Ollama `/api/chat` | `llama3.1` | None (local) |
+| **LM Studio** | `provider_lmstudio.py` | `/v1/chat/completions` (OpenAI-compatible) | Auto-detected (loaded model) | None (local) |
 | **Gemini** | `provider_gemini.py` | Google `generateContent` | `gemini-2.5-flash` | URL `?key=` param |
 | **Claude** | `provider_claude.py` | Anthropic Messages API | `claude-sonnet-4-20250514` | `x-api-key` Header |
 
 > All providers support multimodal (image) inputs for the Vision Analyzer node.
+
+#### Using LM Studio (local models)
+1. Open LM Studio, go to the **Developer** tab and click **Start Server** (default: `http://localhost:1234`).
+2. Load any chat model. Leave `model_name` empty to automatically use the currently loaded model, or enter the exact model ID.
+3. For the Vision Analyzer, load a vision-capable model (e.g. Qwen2.5-VL, LLaVA) so it can analyze images/video frames.
 
 ---
 

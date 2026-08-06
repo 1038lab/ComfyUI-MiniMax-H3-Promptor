@@ -149,6 +149,23 @@ class OllamaProvider(LLMProvider):
 
         return LLMResponse(error="Max retries exceeded.", model=model_name)
 
+    def list_models(self) -> list[str]:
+        """List model tags available on the local Ollama server."""
+        try:
+            response = requests.get(
+                f"{self.api_base}/api/tags",
+                timeout=10,
+            )
+            if response.ok:
+                return [
+                    m.get("name", "")
+                    for m in response.json().get("models", [])
+                    if m.get("name")
+                ]
+        except Exception:
+            pass
+        return []
+
     def is_available(self) -> bool:
         """Check if Ollama is running and reachable."""
         try:
