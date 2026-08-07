@@ -1,101 +1,11 @@
-## Task Type: Omni Reference (Ref2VA)
+## Task Type: Reference Video to Audio Sync (Ref2VA)
 
-This is an OMNI REFERENCE generation task. Multiple media references (images, videos, audio) are combined.
+This task uses a Video (<Video 1>) to provide motion, while transferring a new Subject Identity from an Image (<Picture 1>).
 
-### Media Limits
+Your job is to describe the motion of <Video 1> while anchoring the visual aesthetics (wardrobe, face, style) of <Picture 1>.
 
-- Images: up to 9
-- Videos: up to 3 clips (2–15s each, 15s total)
-- Audio: up to 3 clips (2–15s each, 15s total)
-- Mixed inputs: up to 12 files total
-- Audio CANNOT be used alone — must pair with at least one image or video
-
-### Structure Requirements
-
-For Ref2VA, use the FULL structured template with these sections:
-
-1. [REFERENCE USE] — Declare every reference token and its bounded role
-2. [IDENTITY / CONTINUITY LOCKS] — Lock subject count, identity, wardrobe, voice ownership
-3. [SCENE] — Setting, objectives, emotional arc
-4. [DIALOGUE] — Exact quoted lines with speaker, language, delivery
-5. [SCREEN GEOGRAPHY] — Spatial relationships and axis
-6. [SHOT LIST] — Timed coverage with all production details
-7. [ACTING] — Performance direction
-8. [LIGHT AND IMAGE] — Visual treatment
-9. [CAMERA] — Movement rules and transition language
-10. [PRODUCTION SOUND] — Four layers: ambience, effects, dialogue clarity, music
-11. [NEGATIVES] — Specific failure modes to prevent
-
-### Reference Assignment Rules
-
-For EVERY reference, assign a narrow, truthful role:
-- Identity, wardrobe, prop, scene, style
-- Motion, performance timing, camera, edit rhythm
-- Voice, music, sound effect
-
-NEVER let "use the references" stand in for a proper authority map.
-
-Do NOT let one reference control unrelated categories unless the user explicitly asks.
-
-### Editing / Replacement Tasks
-
-When the task involves editing an existing video, use this structure:
-
-[SOURCE MASTER]
-Video1 is the sole editing master for subjects, scene, timeline, camera, occlusions, dialogue, ambience, and event order.
-
-[REFERENCE USE]
-<Replacement references and their bounded roles.>
-
-[EDIT]
-<Exact target, change, region, or time range.>
-
-[PRESERVE]
-<Everything that must NOT change.>
-
-### Voice Transfer / Dialogue Replacement
-
-When replacing dialogue or transferring voice:
-- Bind the audio to ONE named character and exact line
-- Preserve lip sync, voice ownership, and stereo ambience
-- Specify: who speaks, what is said, which audio supplies the voice, how the mix behaves
-
-### Example Multi-Character Ref2VA Prompt
-
-[REFERENCE USE]
-Image1 defines Character A's face, hair, body, and wardrobe only. Ignore its background and pose.
-Image2 defines Character B's face, hair, body, and wardrobe only. Ignore its background and pose.
-Image3 defines the location, layout, materials, and lighting only. Ignore its people.
-
-[IDENTITY / CONTINUITY LOCKS]
-Keep exactly two characters. Preserve identity, wardrobe, body proportions, and voice ownership. No face, clothing, or position swaps.
-
-[SCENE]
-A dimly lit jazz bar at closing time. Character A, the bartender, wants to close up; Character B, a regular, wants one more drink. The scene moves from polite tension to reluctant warmth.
-
-[DIALOGUE]
-Character A says in natural conversational American English, firmly but not unkindly: "We closed ten minutes ago, you know that."
-Character B replies in a low, warm baritone with a slight Southern drawl: "One more. For the road."
-
-[SCREEN GEOGRAPHY]
-Character A stands behind the bar, frame left. Character B sits on a stool, frame right. Maintain the axis and matching eyelines throughout.
-
-[SHOT LIST]
-0–5s — Medium two-shot from behind the bar showing both characters; the camera is static; Character A wipes a glass and delivers the line without looking up; the bar's amber pendant lights reflect off polished wood.
-5–10s — Cut to medium close-up of Character B, frame right; he leans in slightly, delivers his line with a crooked smile; his eyes are knowing and tired; the camera holds.
-10–15s — Medium shot returns to the two-shot; Character A pauses, sighs, reaches for a bottle and pours; both share a beat of comfortable silence; Character B nods once in thanks.
-
-[ACTING]
-Character A: efficient, practiced movements, slight weariness in the shoulders, avoids eye contact until the final pour. Character B: relaxed but watchful, weight on forearms, stillness that suggests patience.
-
-[LIGHT AND IMAGE]
-Warm amber pendant lights with deep shadows. Polished mahogany bar reflects tiny pools of light. Moody, desaturated palette except for the warm glow zone around the bar. Shallow depth of field.
-
-[CAMERA]
-Locked shots only. One motivated cut at 5s and 10s. No handheld, no drift.
-
-[PRODUCTION SOUND]
-Quiet jazz bar ambience: distant muffled traffic, ice settling in a glass, cloth on glassware. Dialogue is crisp and forward in the mix. Bottle clink and liquid pour at the resolution. No background music.
-
-[NEGATIVES]
-No extra people. No face drift between characters. No wardrobe changes. No voice swaps. No broken eyelines. No subtitles. No unmotivated cuts.
+### Storyboarding Rules:
+1. Describe the precise physical movements, pacing, and camera movements of the video.
+2. Apply the visual characteristics and environment of the image to this motion.
+3. Describe the lip-syncing or action-syncing to the implied audio.
+4. Format your output strictly as a series of [Shot N] paragraphs with timestamps, followed by the Audio: and Music: lines. Do not add any other headers.

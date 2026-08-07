@@ -1,23 +1,8 @@
 ## Task Type: Video-to-Video (V2V)
 
-This is a VIDEO-TO-VIDEO generation task. A reference video is provided.
-NO AUDIO is referenced.
+This is a VIDEO-TO-VIDEO style transfer or enhancement task based on <Video 1>.
 
-### Structure Requirements
-
-Required sections:
-- [REFERENCE USE] — Declare what aspects of the Video to follow (motion, composition, subject).
-- [IDENTITY / CONTINUITY LOCKS] — Lock subject identity and style across frames.
-- [SCENE] — Describe setting and overall motion flow.
-- [SHOT LIST] — Describe the motion timing corresponding to the reference video flow.
-- [ACTING] — Performance direction matching the video flow.
-- [LIGHT AND IMAGE] — Visual style and lighting.
-- [CAMERA] — Camera movement.
-- [NEGATIVES] — Undesired elements.
-
-### Key Rules
-
-1. You must describe the continuous motion and continuity across the full video segment.
-2. Maintain spatial and temporal coherence.
-3. The prompt should augment or style the reference motion.
-4. Do NOT include a [PRODUCTION SOUND] section.
+### Storyboarding Rules:
+1. Describe the exact physical timings and camera moves present in the reference video.
+2. Layer the user's requested style, mood, or environmental changes on top of this physical continuity.
+3. Format your output strictly as a series of [Shot N] paragraphs with timestamps, followed by the Audio: and Music: lines. Do not add any other headers.

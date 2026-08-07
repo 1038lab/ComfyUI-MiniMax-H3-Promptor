@@ -1,22 +1,10 @@
-## Task Type: Video-to-Video-Audio (V2VA)
+## Task Type: Video-to-Video Audio Sync (V2VA)
 
-This is a VIDEO-TO-VIDEO generation task with an AUDIO reference. A reference video and an audio track are provided.
+This is a VIDEO-TO-VIDEO sound sync task. The system has bounded <Video 1> as the master motion reference and <Audio 1> as the audio track.
 
-### Structure Requirements
+Your job is to describe the exact visual actions occurring in the reference video to reinforce the prompt, matching the new requested style or subject, and heavily describing lip-sync or audio-driven movements.
 
-Required sections:
-- [REFERENCE USE] — Declare what aspects of the Video to follow (motion, composition, subject).
-- [IDENTITY / CONTINUITY LOCKS] — Lock subject identity and style across frames.
-- [SCENE] — Describe setting and overall motion flow.
-- [SHOT LIST] — Describe the motion timing corresponding to the reference video flow.
-- [ACTING] — Performance direction matching the video flow.
-- [LIGHT AND IMAGE] — Visual style and lighting.
-- [CAMERA] — Camera movement.
-- [PRODUCTION SOUND] — Must describe how the visual action interacts or synchronizes with the audio reference provided.
-- [NEGATIVES] — Undesired elements.
-
-### Key Rules
-
-1. You must describe the continuous motion and continuity across the full video segment.
-2. Maintain spatial and temporal coherence.
-3. Crucial: The [PRODUCTION SOUND] section must orchestrate visuals to match the referenced sound!
+### Storyboarding Rules:
+1. Follow the physical timing of the original video exactly.
+2. Embed camera moves that match the original references.
+3. Format your output strictly as a series of [Shot N] paragraphs with timestamps, followed by the Audio: and Music: lines. Do not add any other headers.

@@ -1,40 +1,8 @@
 ## Task Type: Text-to-Video (T2V)
 
-This is a TEXT-TO-VIDEO generation task. There are NO reference images, videos, or audio files.
+This is a pure TEXT-TO-VIDEO generation task with zero image or video references. You are creating the entire scene from scratch.
 
-### Structure Requirements
-
-For T2V, do NOT include a [REFERENCE USE] section. Start directly with the scene description.
-
-Use this minimal section set:
-- [SCENE] — Describe the setting, characters, and narrative arc
-- [SHOT LIST] — Timed visual coverage with camera and action
-- [ACTING] — Performance direction (if characters are present)
-- [LIGHT AND IMAGE] — Visual treatment
-- [CAMERA] — Allowed movements and shot sizes
-- [PRODUCTION SOUND] — Ambient sound, effects, and music
-- [NEGATIVES] — Likely failure modes to avoid
-
-### Example T2V Prompt
-
-[SCENE]
-A coastal lighthouse at the golden hour. Warm amber light pours through streaked salt-crusted windows. A solitary keeper in a dark wool peacoat climbs the spiral iron staircase, his weathered hands gripping the railing. The air is heavy with sea mist.
-
-[SHOT LIST]
-0–5s — Low-angle medium shot from the base of the spiral staircase, looking up; the camera tilts up slowly tracking the keeper's deliberate ascent; his boots ring on each iron step; he pauses mid-climb to look out through a narrow window.
-5–10s — Close-up from the landing above; the keeper reaches the top, pushes open the heavy lantern room door; warm golden light washes over his face; he squints and a small, satisfied smile breaks across his weathered features.
-
-[ACTING]
-Unhurried, contemplative movement. Heavy but purposeful steps. Each gesture suggests decades of routine. Breathing is visible in the cold air.
-
-[LIGHT AND IMAGE]
-Golden hour backlight with volumetric rays cutting through dusty air. High contrast between the dark iron interior and the brilliant amber exterior. 35mm film grain, shallow depth of field on facial details.
-
-[CAMERA]
-Slow, steady movements only. No handheld shake. Motivated tilts and pans following the keeper's movement path.
-
-[PRODUCTION SOUND]
-Deep ocean wave crashes below, rhythmic and distant. Wind whistles through the stairwell gaps. Iron stairs produce a clean metallic ring with each footstep. Heavy wooden door creaks open at the climax. No music.
-
-[NEGATIVES]
-No extra people. No modern objects. No sudden camera movements. No subtitles. No background music.
+### Storyboarding Rules:
+1. Establish a clear, distinct visual style, lighting, and framing in [Shot 1].
+2. Provide rich, highly-detailed descriptions of the characters, environment, and physical mechanics since there are no image references to rely on.
+3. Format your output strictly as a series of [Shot N] paragraphs with timestamps, followed by the Audio: and Music: lines. Do not add any other headers.
