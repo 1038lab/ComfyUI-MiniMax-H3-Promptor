@@ -45,15 +45,30 @@ class GeminiProvider(LLMProvider):
         }
 
         # Build user content parts
-        parts = [{"text": user_message}]
-        if base64_images:
-            for img_b64 in base64_images:
-                parts.append({
-                    "inline_data": {
-                        "mime_type": "image/jpeg",
-                        "data": img_b64,
-                    }
-                })
+        parts = []
+        if base64_images and len(base64_images) > 0:
+            if isinstance(base64_images[0], dict):
+                for item in base64_images:
+                    if "text" in item:
+                        parts.append({"text": item["text"]})
+                    elif "image" in item:
+                        parts.append({
+                            "inline_data": {
+                                "mime_type": "image/jpeg",
+                                "data": item["image"],
+                            }
+                        })
+            else:
+                parts.append({"text": user_message})
+                for img_b64 in base64_images:
+                    parts.append({
+                        "inline_data": {
+                            "mime_type": "image/jpeg",
+                            "data": img_b64,
+                        }
+                    })
+        else:
+            parts.append({"text": user_message})
 
         payload = {
             "system_instruction": {

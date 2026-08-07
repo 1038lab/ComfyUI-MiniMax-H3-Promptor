@@ -13,12 +13,11 @@ import json
 import os
 from pathlib import Path
 
+import comfy.model_management as model_management
+from comfy_api.latest import io
+
 from .config_manager import get_config_manager
-from .provider_openai import OpenAIProvider
-from .provider_ollama import OllamaProvider
-from .provider_gemini import GeminiProvider
-from .provider_claude import ClaudeProvider
-from .utils import log_info, log_error, tensor_to_base64
+from .utils import log_info, log_error, tensor_to_base64, _create_provider
 
 
 PRESETS_FILE = Path(__file__).parent.parent / "vision_prompts.json"
@@ -70,26 +69,7 @@ VIDEO_MODES = list(PRESETS.get("video_prompts", DEFAULT_PRESETS["video_prompts"]
 PROVIDERS = ["openai", "ollama", "gemini", "claude"]
 
 
-def _create_provider(provider_name: str, config_manager, api_key_override: str = ""):
-    provider_config = config_manager.get_provider_config(provider_name)
-    if not provider_config:
-        raise ValueError(f"Provider '{provider_name}' not configured.")
-
-    api_base = provider_config.get("api_base", "")
-    api_key = api_key_override or provider_config.get("api_key", "")
-    model = provider_config.get("default_model", "")
-
-    if provider_name == "ollama":
-        return OllamaProvider(api_base=api_base, model=model)
-    elif provider_name == "gemini":
-        return GeminiProvider(api_base=api_base, api_key=api_key, model=model)
-    elif provider_name == "claude":
-        return ClaudeProvider(api_base=api_base, api_key=api_key, model=model)
-    else:
-        return OpenAIProvider(api_base=api_base, api_key=api_key, model=model)
-
-
-class H3_Vision_Analyzer:
+class H3_Vision_Analyzer(io.ComfyNode):
     """
     MiniMax H3 Vision Analyzer
     
@@ -97,163 +77,264 @@ class H3_Vision_Analyzer:
     using targeted user prompts via JSON preset dropdowns.
     """
 
-    def __init__(self):
-        pass
+    @classmethod
+    def define_schema(cls):
+        return io.Schema(
+            node_id="H3_Vision_Analyzer",
+            display_name="MiniMax H3 Vision Analyzer",
+            category="🧪AILab/🎬 MiniMax H3-Promptor",
+            inputs=[
+                io.Combo.Input("global_image_mode", options=IMAGE_MODES, default="Subject / Identity"),
+                io.Combo.Input("global_video_mode", options=VIDEO_MODES, default="Comprehensive"),
+                io.String.Input("custom_prompt_override", multiline=True, default="", tooltip="Line-by-line override. Example: <Picture 2>: Overwrite prompt here", optional=True),
+                
+                io.Autogrow.Input("ref_images", optional=True,
+                                  template=io.Autogrow.TemplatePrefix(
+                                      input=io.Image.Input("image", tooltip="Reference image"),
+                                      prefix="image_", min=0, max=9)),
+                io.Autogrow.Input("ref_videos", optional=True,
+                                  template=io.Autogrow.TemplatePrefix(
+                                      input=getattr(io, "Video", getattr(io, "AnyType", io.Image)).Input("video", tooltip="Reference video"),
+                                      prefix="video_", min=0, max=3)),
+
+                io.Combo.Input("output_language", options=["English", "Chinese"], default="English", tooltip="Language for the analysis output.", optional=True),
+                io.Combo.Input("provider", options=PROVIDERS, default="openai", tooltip="Vision LLM provider to use for analysis.", optional=True),
+                io.String.Input("api_key", default="", tooltip="API key override.", optional=True),
+                io.String.Input("model_name", default="", tooltip="Model override (e.g. gpt-4o, qwen-vl-max).", optional=True),
+                io.Float.Input("temperature", default=0.2, min=0.0, max=1.0, step=0.05, optional=True),
+                io.Int.Input("max_tokens", default=2048, min=256, max=8192, step=256, optional=True),
+            ],
+            outputs=[
+                io.String.Output("vision_context", display_name="vision_context")
+            ],
+        )
 
     @classmethod
-    def INPUT_TYPES(s):
-        return {
-            "required": {},
-            "optional": {
-                "image_ref_1": ("IMAGE", {}),
-                "mode_1": (IMAGE_MODES, {"default": IMAGE_MODES[0]}),
-
-                "image_ref_2": ("IMAGE", {}),
-                "mode_2": (IMAGE_MODES, {"default": IMAGE_MODES[0]}),
-
-                "image_ref_3": ("IMAGE", {}),
-                "mode_3": (IMAGE_MODES, {"default": IMAGE_MODES[0]}),
-                
-                "image_ref_4": ("IMAGE", {}),
-                "mode_4": (IMAGE_MODES, {"default": IMAGE_MODES[0]}),
-
-                "video_ref": ("IMAGE", {"tooltip": "Video batch input."}),
-                "mode_video": (VIDEO_MODES, {"default": VIDEO_MODES[0]}),
-
-                "output_language": (["English", "Chinese"], {
-                    "default": "English",
-                    "tooltip": "Language for the analysis output."
-                }),
-                "provider": (PROVIDERS, {
-                    "default": "openai",
-                    "tooltip": "Vision LLM provider to use for analysis.",
-                }),
-                "api_key": ("STRING", {
-                    "default": "",
-                    "tooltip": "API key override.",
-                }),
-                "model_name": ("STRING", {
-                    "default": "",
-                    "tooltip": "Model override (e.g. gpt-4o, qwen-vl-max).",
-                }),
-                "temperature": ("FLOAT", {
-                    "default": 0.2, "min": 0.0, "max": 1.0, "step": 0.05
-                }),
-                "max_tokens": ("INT", {
-                    "default": 2048, "min": 256, "max": 8192, "step": 256
-                }),
-            },
-        }
-
-    RETURN_TYPES = ("STRING",)
-    RETURN_NAMES = ("vision_context",)
-    FUNCTION = "analyze_media"
-    CATEGORY = "🧪AILab/🎬 MiniMax H3-Promptor"
-
-    def analyze_media(
-        self,
-        image_ref_1=None, mode_1: str = IMAGE_MODES[0],
-        image_ref_2=None, mode_2: str = IMAGE_MODES[0],
-        image_ref_3=None, mode_3: str = IMAGE_MODES[0],
-        image_ref_4=None, mode_4: str = IMAGE_MODES[0],
-        video_ref=None, mode_video: str = VIDEO_MODES[0],
+    def execute(
+        cls,
+        global_image_mode: str,
+        global_video_mode: str,
         output_language: str = "English",
         provider: str = "openai",
         api_key: str = "",
         model_name: str = "",
+        custom_prompt_override: str = "",
         temperature: float = 0.2,
         max_tokens: int = 2048,
-    ):
+        ref_images: io.Autogrow.Type = None,
+        ref_videos: io.Autogrow.Type = None,
+    ) -> io.NodeOutput:
         try:
-            base64_images = []
-            instructions = []
-            media_tags = []
-            
+            # Hardcode unload logic to always trigger for Ollama
+            if provider == "ollama":
+                log_info("Unloading local Vision model from VRAM...")
+                model_management.unload_all_models()
+                model_management.soft_empty_cache()
+            media_keys = []
+            final_dict = {}
+
             # Helper to fetch active prompt string
             def get_prompt_str(mode: str, is_video=False):
                 dict_key = "video_prompts" if is_video else "image_prompts"
                 return PRESETS.get(dict_key, {}).get(mode, "Analyze visually.")
 
-            if image_ref_1 is not None:
-                media_tags.append("IMG1")
-                frames = tensor_to_base64(image_ref_1, max_frames=1)
-                base64_images.extend(frames)
-                instructions.append(f"Regarding [Image 1]: {get_prompt_str(mode_1)}")
-                
-            if image_ref_2 is not None:
-                media_tags.append("IMG2")
-                frames = tensor_to_base64(image_ref_2, max_frames=1)
-                base64_images.extend(frames)
-                instructions.append(f"Regarding [Image 2]: {get_prompt_str(mode_2)}")
-                
-            if image_ref_3 is not None:
-                media_tags.append("IMG3")
-                frames = tensor_to_base64(image_ref_3, max_frames=1)
-                base64_images.extend(frames)
-                instructions.append(f"Regarding [Image 3]: {get_prompt_str(mode_3)}")
-                
-            if image_ref_4 is not None:
-                media_tags.append("IMG4")
-                frames = tensor_to_base64(image_ref_4, max_frames=1)
-                base64_images.extend(frames)
-                instructions.append(f"Regarding [Image 4]: {get_prompt_str(mode_4)}")
-                
-            if video_ref is not None:
-                media_tags.append("VID")
-                frames = tensor_to_base64(video_ref, max_frames=4)
-                base64_images.extend(frames)
-                instructions.append(f"Regarding [Video] ({len(frames)} extracted keyframes): {get_prompt_str(mode_video, is_video=True)}")
-
-            if not base64_images:
-                return ("No visual media provided for analysis.",)
-
-            lang_instruction = ""
-            if output_language.lower() == "chinese":
-                lang_instruction = " You MUST write your entire analysis in Simplified Chinese (简体中文)."
-
-            system_prompt = (
-                "You are an expert film director and visual analyst. "
-                "Analyze the provided visual media precisely according to the user's specific instructions for each item. "
-                "Output a clean, structured report using the exact Labels the user provided (e.g. 'Image 1:', 'Protagonist:'). "
-                "Focus strictly on visual aspects as instructed."
-                f"{lang_instruction}"
-            )
-            
-            user_message = "Please analyze the provided visuals based on these instructions:\n\n" + "\n".join(instructions)
+            # Generate overrides mapping
+            overrides = {}
+            for line in custom_prompt_override.splitlines():
+                if ":" in line:
+                    k, v = line.split(":", 1)
+                    k_norm = k.lower()
+                    item_idx = ''.join(filter(str.isdigit, k_norm))
+                    if not item_idx: continue
+                    idx = int(item_idx)
+                    
+                    if "<" not in k_norm and ("image" in k_norm or "video" in k_norm or "img" in k_norm or "vid" in k_norm):
+                        idx += 1
+                        
+                    if "video" in k_norm or "vid" in k_norm:
+                        key = f"<Video {idx}>"
+                    else:
+                        key = f"<Picture {idx}>"
+                    overrides[key] = v.strip()
 
             config_manager = get_config_manager()
             llm = _create_provider(provider, config_manager, api_key)
             model_override = model_name if model_name.strip() else None
-            
-            log_info(f"Analyzer calling {provider} with {len(base64_images)} frames...")
-            
-            response = llm.chat(
-                system_prompt=system_prompt,
-                user_message=user_message,
-                base64_images=base64_images,
-                temperature=temperature,
-                max_tokens=max_tokens,
-                model=model_override,
+
+            lang_instruction = ""
+            if output_language.lower() == "chinese":
+                lang_instruction = " You MUST write your response in Simplified Chinese (简体中文)."
+            else:
+                lang_instruction = " You MUST write your response in English."
+
+            system_prompt = (
+                "You are an expert film director and visual analyst. "
+                "Analyze the provided visual media precisely according to the user's instructions.\n"
+                "CRITICAL: You MUST output ONLY a valid stringified JSON dictionary mapping the specific media keys to their descriptions. "
+                "For example: {\"<Picture 1>\": \"...\", \"<Picture 2>\": \"...\"}. "
+                "Do NOT output markdown blocks or extra text outside the JSON."
+                f"{lang_instruction}"
             )
 
-            if not response.success:
-                log_error(response.error)
-                return (f"[Vision Analyzer Error]: {response.error}",)
+            # Provide safety wrapper around ComfyAPI dict/list types
+            def _get_iterable(media_input):
+                if not media_input:
+                    return []
+                if isinstance(media_input, dict):
+                    return media_input.values()
+                if isinstance(media_input, (list, tuple)):
+                    return media_input
+                return [media_input]
 
-            # Dump raw to console for inspection
+            # 1. Process All Images Together in ONE Standard Payload
+            img_list = list(img for img in _get_iterable(ref_images) if img is not None)
+            img_index = 1
+            
+            if img_list:
+                interleaved_payload = []
+                chunk_keys = []
+                instructions = []
+                all_frames = []
+                
+                pos = 1
+                for img in img_list:
+                    target_key = f"<Picture {img_index}>"
+                    media_keys.append(target_key)
+                    chunk_keys.append(target_key)
+                    frames = tensor_to_base64(img, max_frames=1)
+                    active_prompt = overrides.get(target_key, get_prompt_str(global_image_mode))
+                    
+                    instructions.append(f"Media {pos} is {target_key}: Please analyze based on the instruction -> {active_prompt}")
+                    all_frames.extend(frames)
+                    
+                    img_index += 1
+                    pos += 1
+                    
+                mega_prompt = "Order of attached media:\n" + "\n".join(instructions)
+                interleaved_payload.append({"text": mega_prompt})
+                for f in all_frames:
+                    interleaved_payload.append({"image": f})
+                    
+                log_info(f"Analyzer calling {provider} for ALL IMAGES ({len(chunk_keys)} items)...")
+                response = llm.chat(
+                    system_prompt=system_prompt,
+                    user_message="",
+                    base64_images=interleaved_payload,
+                    temperature=temperature,
+                    max_tokens=max_tokens,
+                    model=model_override,
+                )
+                
+                if response.success:
+                    try:
+                        clean_content = response.content.strip()
+                        if clean_content.startswith("```json"): clean_content = clean_content.replace("```json", "", 1)
+                        if clean_content.endswith("```"): clean_content = clean_content[:-3]
+                        
+                        parsed = json.loads(clean_content.strip())
+                        for key in chunk_keys:
+                            final_dict[key] = parsed.get(key, "Failed to analyze.")
+                    except json.JSONDecodeError:
+                        log_error(f"JSON Error in Image Batch.")
+                        for key in chunk_keys: final_dict[key] = "LLM failed to return valid JSON."
+                else:
+                    log_error(f"API Error in Image Batch: {response.error}")
+                    for key in chunk_keys: final_dict[key] = f"API Error: {response.error}"
+
+            # 2. Process Videos Logically Separately (1 Video per API call) to prevent Video dropping
+            vid_index = 1
+            for vid in _get_iterable(ref_videos):
+                if vid is not None:
+                    target_key = f"<Video {vid_index}>"
+                    media_keys.append(target_key)
+                    frames = tensor_to_base64(vid, max_frames=4)
+                    active_prompt = overrides.get(target_key, get_prompt_str(global_video_mode, is_video=True))
+                    
+                    interleaved_payload = []
+                    mega_prompt = f"{target_key}: Please analyze this sequence of {len(frames)} frames based on the instruction -> {active_prompt}"
+                    interleaved_payload.append({"text": mega_prompt})
+                    for f in frames:
+                        interleaved_payload.append({"image": f})
+                    
+                    log_info(f"Analyzer calling {provider} for {target_key} ({len(frames)} frames)...")
+                    response = llm.chat(
+                        system_prompt=system_prompt,
+                        user_message="",
+                        base64_images=interleaved_payload,
+                        temperature=temperature,
+                        max_tokens=max_tokens,
+                        model=model_override,
+                    )
+                    
+                    if response.success:
+                        try:
+                            clean_content = response.content.strip()
+                            if clean_content.startswith("```json"): clean_content = clean_content.replace("```json", "", 1)
+                            if clean_content.endswith("```"): clean_content = clean_content[:-3]
+                            
+                            parsed = json.loads(clean_content.strip())
+                            final_dict[target_key] = parsed.get(target_key, "Failed to analyze.")
+                        except json.JSONDecodeError:
+                            log_error(f"JSON Error in Video {vid_index}.")
+                            final_dict[target_key] = "LLM failed to return valid JSON."
+                    else:
+                        log_error(f"API Error in Video {vid_index}: {response.error}")
+                        final_dict[target_key] = f"API Error: {response.error}"
+                        
+                    vid_index += 1
+
+            if not final_dict:
+                return ("{}", "T2V (No Media)")
+
+            # 3. Global Vibe Instruction (Text Only Summarization)
+            vibe_prompt = overrides.get("Global_Vibe", get_prompt_str(global_image_mode))
+            context_str = json.dumps(final_dict, ensure_ascii=False)
+            vibe_message = f"Based on the following individual media analyses:\n{context_str}\n\nProvide the final 'Global_Vibe' synthesis using this instruction: {vibe_prompt}"
+            
+            log_info(f"Analyzer calling {provider} for Global Vibe synthesis...")
+            vibe_res = llm.chat(
+                system_prompt=system_prompt,
+                user_message=vibe_message,
+                base64_images=None,
+                temperature=temperature,
+                max_tokens=max_tokens,
+                model=model_override
+            )
+            
+            if vibe_res.success:
+                try:
+                    clean_content = vibe_res.content.strip()
+                    if clean_content.startswith("```json"): clean_content = clean_content.replace("```json", "", 1)
+                    if clean_content.endswith("```"): clean_content = clean_content[:-3]
+                    parsed = json.loads(clean_content.strip())
+                    final_dict["Global_Vibe"] = parsed.get("Global_Vibe", "Failed to synthesize.")
+                except json.JSONDecodeError:
+                    if "Global_Vibe" in vibe_res.content and "}" not in vibe_res.content:
+                        final_dict["Global_Vibe"] = vibe_res.content.replace('"', '').strip()
+                    else:
+                        final_dict["Global_Vibe"] = "LLM failed to return valid JSON for Global_Vibe."
+            else:
+                final_dict["Global_Vibe"] = f"API Error: {vibe_res.error}"
+                
+            # Embed media keys information to guarantee H3_Promptor can count accurately
+            final_dict["_media_keys"] = media_keys
+            
+            final_output = json.dumps(final_dict, indent=4, ensure_ascii=False)
+            
+            # Dump raw to console for inspection (Restored)
             print(f"\n{'-'*20} RAW ANALYZER OUTPUT {'-'*20}")
-            print(response.content)
+            print(final_output)
             print(f"{'-'*60}\n")
             
-            # Prepend invisible media signature for Auto mode targeting in Promptor Node
-            sig_str = " ".join(media_tags)
-            final_output = f"[MEDIA_SIGNATURE: {sig_str}]\n{response.content.strip()}"
+            if provider == "ollama":
+                log_info("Re-clearing VRAM after VLM execution to free space for H3...")
+                model_management.soft_empty_cache()
             
-            return (final_output,)
+            return io.NodeOutput(final_output)
 
         except Exception as e:
             log_error(str(e))
-            return (f"[Analyzer Exception]: {str(e)}",)
+            return io.NodeOutput(f"[Analyzer Exception]: {str(e)}")
 
 
 NODE_CLASS_MAPPINGS = {

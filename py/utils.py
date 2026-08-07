@@ -59,6 +59,10 @@ def tensor_to_base64(tensor, max_frames: int = 4) -> list[str]:
     """
     from PIL import Image
 
+    # Handle Comfy API v3 VideoFromFile object wrappers
+    if hasattr(tensor, "get_components"):
+        tensor = tensor.get_components().images
+
     img_array = tensor.cpu().numpy()
     if img_array.ndim == 3:
         # [H, W, C] -> [1, H, W, C]
@@ -137,3 +141,31 @@ def sanitize_llm_output(text: str) -> str:
         result = re.sub(preamble, "", result, flags=re.IGNORECASE)
 
     return result.strip()
+
+
+# ---------------------------------------------------------------------------
+# LLM Provider Factory
+# ---------------------------------------------------------------------------
+from .provider_openai import OpenAIProvider
+from .provider_ollama import OllamaProvider
+from .provider_gemini import GeminiProvider
+from .provider_claude import ClaudeProvider
+
+def _create_provider(provider_name: str, config_manager, api_key_override: str = ""):
+    """Create an LLM provider instance from config."""
+    provider_config = config_manager.get_provider_config(provider_name)
+    if not provider_config:
+        raise ValueError(f"Provider '{provider_name}' not configured.")
+
+    api_base = provider_config.get("api_base", "")
+    api_key = api_key_override or provider_config.get("api_key", "")
+    model = provider_config.get("default_model", "")
+
+    if provider_name == "ollama":
+        return OllamaProvider(api_base=api_base, model=model)
+    elif provider_name == "gemini":
+        return GeminiProvider(api_base=api_base, api_key=api_key, model=model)
+    elif provider_name == "claude":
+        return ClaudeProvider(api_base=api_base, api_key=api_key, model=model)
+    else:
+        return OpenAIProvider(api_base=api_base, api_key=api_key, model=model)

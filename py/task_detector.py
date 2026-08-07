@@ -36,6 +36,7 @@ class TaskDetector:
     def detect(
         image_count: int = 0,
         has_video: bool = False,
+        has_audio: bool = False,
         user_override: str = "Auto",
     ) -> str:
         """
@@ -44,6 +45,7 @@ class TaskDetector:
         Args:
             image_count: Number of images provided (0-4).
             has_video: Whether a video reference is provided.
+            has_audio: Whether an audio reference is provided.
             user_override: Explicit user selection from the dropdown.
         """
         # Respect explicit user choice
@@ -56,17 +58,23 @@ class TaskDetector:
             if user_override in TASK_TYPES:
                 return user_override
 
-        # Auto-detection logic
+        # Auto-detection logic (Audio variants take precedence if has_audio is True)
         if has_video and image_count > 0:
-            return "Ref2VA"   # Images + Video = Omni multi-modal reference
-        elif has_video:
-            return "V2V"      # Video only
+            return "Ref2VA"   # Images + Video (+ Audio optionally) = Omni
         elif image_count >= 3:
-            return "Ref2VA"   # 3-4 images = Omni reference (too many for first/last)
+            return "Ref2VA"   # 3-4 images = Omni reference
+        elif has_video and has_audio:
+            return "V2VA"
+        elif has_video:
+            return "V2V"
         elif image_count == 2:
             return "FL2VA"    # Exactly 2 images = First & Last frame
+        elif image_count == 1 and has_audio:
+            return "I2VA"
         elif image_count == 1:
-            return "I2V"      # Single image
+            return "I2V"
+        elif has_audio:
+            return "A2V"
         else:
             return "T2V"      # Text only (no media)
 

@@ -50,18 +50,32 @@ class ClaudeProvider(LLMProvider):
         }
 
         # Build user content
-        if base64_images:
+        if base64_images and len(base64_images) > 0:
             user_content = []
-            for img_b64 in base64_images:
-                user_content.append({
-                    "type": "image",
-                    "source": {
-                        "type": "base64",
-                        "media_type": "image/jpeg",
-                        "data": img_b64,
-                    }
-                })
-            user_content.append({"type": "text", "text": user_message})
+            if isinstance(base64_images[0], dict):
+                for item in base64_images:
+                    if "text" in item:
+                        user_content.append({"type": "text", "text": item["text"]})
+                    elif "image" in item:
+                        user_content.append({
+                            "type": "image",
+                            "source": {
+                                "type": "base64",
+                                "media_type": "image/jpeg",
+                                "data": item["image"],
+                            }
+                        })
+            else:
+                for img_b64 in base64_images:
+                    user_content.append({
+                        "type": "image",
+                        "source": {
+                            "type": "base64",
+                            "media_type": "image/jpeg",
+                            "data": img_b64,
+                        }
+                    })
+                user_content.append({"type": "text", "text": user_message})
         else:
             user_content = user_message
 

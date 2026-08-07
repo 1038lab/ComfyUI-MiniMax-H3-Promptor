@@ -46,13 +46,26 @@ class OpenAIProvider(LLMProvider):
         if self.api_key:
             headers["Authorization"] = f"Bearer {self.api_key}"
 
-        if base64_images:
-            user_content = [{"type": "text", "text": user_message}]
-            for img_b64 in base64_images:
-                user_content.append({
-                    "type": "image_url",
-                    "image_url": {"url": f"data:image/jpeg;base64,{img_b64}"}
-                })
+        if base64_images and len(base64_images) > 0:
+            if isinstance(base64_images[0], dict):
+                # Interleaved mode
+                user_content = []
+                for item in base64_images:
+                    if "text" in item:
+                        user_content.append({"type": "text", "text": item["text"]})
+                    elif "image" in item:
+                        user_content.append({
+                            "type": "image_url",
+                            "image_url": {"url": f"data:image/jpeg;base64,{item['image']}"}
+                        })
+            else:
+                # Flat legacy mode
+                user_content = [{"type": "text", "text": user_message}]
+                for img_b64 in base64_images:
+                    user_content.append({
+                        "type": "image_url",
+                        "image_url": {"url": f"data:image/jpeg;base64,{img_b64}"}
+                    })
         else:
             user_content = user_message
 

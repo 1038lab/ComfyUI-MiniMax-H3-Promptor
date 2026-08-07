@@ -44,9 +44,24 @@ class OllamaProvider(LLMProvider):
         model_name = self.get_model(model)
         url = f"{self.api_base}/api/chat"
 
-        user_payload = {"role": "user", "content": user_message}
-        if base64_images:
-            user_payload["images"] = base64_images
+        user_payload = {"role": "user", "content": ""}
+        if base64_images and len(base64_images) > 0:
+            if isinstance(base64_images[0], dict):
+                text_parts = []
+                image_parts = []
+                for item in base64_images:
+                    if "text" in item:
+                        text_parts.append(item["text"])
+                    elif "image" in item:
+                        image_parts.append(item["image"])
+                user_payload["content"] = "\n\n".join(text_parts)
+                if image_parts:
+                    user_payload["images"] = image_parts
+            else:
+                user_payload["content"] = user_message
+                user_payload["images"] = base64_images
+        else:
+            user_payload["content"] = user_message
 
         payload = {
             "model": model_name,

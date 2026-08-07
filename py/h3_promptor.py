@@ -13,44 +13,14 @@ from .config_manager import get_config_manager
 from .task_detector import TASK_TYPE_OPTIONS, TaskDetector
 from .prompt_builder import PromptBuilder
 from .post_processor import PostProcessor
-from .provider_openai import OpenAIProvider
-from .provider_ollama import OllamaProvider
-from .provider_gemini import GeminiProvider
-from .provider_claude import ClaudeProvider
-from .utils import log_info, log_error
+from .utils import log_info, log_error, _create_provider
 
 
 # Provider options
 PROVIDERS = ["openai", "ollama", "gemini", "claude"]
 
 
-def _create_provider(provider_name: str, config_manager, api_key_override: str = ""):
-    """Create an LLM provider instance from config."""
-    provider_config = config_manager.get_provider_config(provider_name)
-    if not provider_config:
-        raise ValueError(f"Provider '{provider_name}' not configured.")
-
-    api_base = provider_config.get("api_base", "")
-    api_key = api_key_override or provider_config.get("api_key", "")
-    model = provider_config.get("default_model", "")
-
-    if provider_name == "ollama":
-        return OllamaProvider(api_base=api_base, model=model)
-    elif provider_name == "gemini":
-        return GeminiProvider(api_base=api_base, api_key=api_key, model=model)
-    elif provider_name == "claude":
-        return ClaudeProvider(api_base=api_base, api_key=api_key, model=model)
-    else:
-        return OpenAIProvider(api_base=api_base, api_key=api_key, model=model)
-
-
 class H3_Promptor:
-    """
-    MiniMax H3 Prompt Generator
-
-    Full-featured text-based prompt generator optimized 
-    for fast API calls using pre-computed vision context.
-    """
 
     def __init__(self):
         self.prompt_builder = PromptBuilder()
@@ -68,9 +38,9 @@ class H3_Promptor:
                     "default": "",
                     "tooltip": "Your main creative description of the scene.",
                 }),
-                "duration": ("INT", {
-                    "default": 5, "min": 4, "max": 15, "step": 1,
-                    "tooltip": "Vaild duration for Minimax H3 is 4-15 seconds.",
+                "duration": ("FLOAT", {
+                    "default": 5, "min": 2, "max": 15, "step": 0.5,
+                    "tooltip": "Vaild duration for Minimax H3 is 2-15 seconds.",
                 }),
             },
             "optional": {
@@ -79,6 +49,18 @@ class H3_Promptor:
                     "forceInput": True,
                     "default": "",
                     "tooltip": "Connect the output from H3_Vision_Analyzer here.",
+                }),
+                "reference_images": (["Auto", "1", "2", "3", "4", "5", "6", "7", "8", "9"], {
+                    "default": "Auto",
+                    "tooltip": "Auto uses Vision Analyzer count. Otherwise manually set how many images are connected to Minimax (max 9).",
+                }),
+                "reference_videos": (["Auto", "1", "2", "3"], {
+                    "default": "Auto",
+                    "tooltip": "Auto uses Vision Analyzer count. Otherwise manually set how many videos are connected (max 3).",
+                }),
+                "reference_audios": (["Auto", "1", "2", "3"], {
+                    "default": "Auto",
+                    "tooltip": "Auto uses Vision Analyzer count. Otherwise manually set how many audio files are connected (max 3).",
                 }),
                 "output_language": (["English", "Chinese"], {
                     "default": "English",
@@ -114,8 +96,11 @@ class H3_Promptor:
         self,
         task_type: str,
         description: str,
-        duration: int,
+        duration: float,
         vision_context: str = "",
+        reference_images: str = "Auto",
+        reference_videos: str = "Auto",
+        reference_audios: str = "Auto",
         output_language: str = "English",
         provider: str = "openai",
         api_key: str = "",
@@ -126,34 +111,59 @@ class H3_Promptor:
         """Generate a MiniMax H3 structured prompt."""
         try:
             # Parse intelligent Auto media signature if present
-            image_count = 0
-            has_video = False
+            # Convert UI string values back to integers, treating "Auto" as 0 internally for fallback
+            ui_ref_images = 0 if reference_images == "Auto" else int(reference_images)
+            ui_ref_videos = 0 if reference_videos == "Auto" else int(reference_videos)
+            ui_ref_audios = 0 if reference_audios == "Auto" else int(reference_audios)
             
-            if vision_context and "[MEDIA_SIGNATURE:" in vision_context:
-                import re
-                match = re.search(r"\[MEDIA_SIGNATURE:\s*(.*?)\]", vision_context)
-                if match:
-                    tags = match.group(1).split()
-                    image_count = sum(1 for t in tags if t.startswith("IMG"))
-                    has_video = "VID" in tags
+            image_count = ui_ref_images
+            has_video = ui_ref_videos > 0
+            has_audio = ui_ref_audios > 0
+            
+            parsed_vision_dict = None
+            if vision_context:
+                import json
+                try:
+                    parsed_vision_dict = json.loads(vision_context)
                     
-                # Strip the signature so the LLM doesn't see our internal routing tag
-                vision_context = re.sub(r"\[MEDIA_SIGNATURE:.*?\]\n", "", vision_context).strip()
+                    # Update media counts based on Dictionary keys
+                    media_keys = parsed_vision_dict.get("_media_keys", [])
+                    img_count = sum(1 for k in media_keys if k.startswith("<Picture"))
+                    vid_count = sum(1 for k in media_keys if k.startswith("<Video"))
+                    aud_count = sum(1 for k in media_keys if k.startswith("<Audio"))
+                    
+                    # Automatically use the maximum value: allows partial vision analysis (e.g. 3 analyzed) 
+                    # while keeping remaining images (e.g. 6 total) as empty visual anchors for the H3 model
+                    image_count = max(ui_ref_images, img_count)
+                    has_video = (ui_ref_videos > 0) or (vid_count > 0)
+                    has_audio = (ui_ref_audios > 0) or (aud_count > 0)
+                        
+                    # Format vision context back into a readable string for the Prompt LLM context
+                    formatted_context = []
+                    for k, v in parsed_vision_dict.items():
+                        if k != "_media_keys":
+                            formatted_context.append(f"{k}: {v}")
+                    vision_context = "\n".join(formatted_context)
+                
+                except json.JSONDecodeError:
+                    log_error("H3_Promptor: Failed to parse vision_context as JSON. Treating as raw string.")
 
             # 1. Detect Task Type
             detected_type = TaskDetector.detect(
                 image_count=image_count,
                 has_video=has_video,
+                has_audio=has_audio,
                 user_override=task_type
             )
             
             log_info(f"Task type: {TaskDetector.get_task_description(detected_type)}")
 
             # 4. Generate system and user prompts
-            system_prompt = self.prompt_builder.build_system_prompt(detected_type)
+            system_prompt = self.prompt_builder.build_system_prompt(detected_type, duration=duration)
             
             user_message = self.prompt_builder.build_user_message(
-                description, duration, detected_type, vision_context=vision_context, output_language=output_language
+                description, duration, detected_type, vision_context=vision_context, output_language=output_language,
+                image_count=image_count, has_video=has_video
             )
 
             # 4. Get LLM provider
@@ -190,7 +200,18 @@ class H3_Promptor:
 
             # 6. Post-process
             task_desc = TaskDetector.get_task_description(detected_type)
-            cleaned_prompt = PostProcessor.clean(response.content, detected_type, full_task_desc=task_desc)
+            
+            # Dynamically compute subject definitions and alignment strings in Python
+            subject_defs = self.prompt_builder.generate_subject_definitions(image_count, has_video, parsed_vision_dict=parsed_vision_dict)
+            alignment_inst = self.prompt_builder.generate_alignment_instruction(detected_type, duration, image_count)
+            
+            cleaned_prompt = PostProcessor.clean(
+                response.content, 
+                detected_type, 
+                full_task_desc=task_desc,
+                subject_defs=subject_defs,
+                alignment_inst=alignment_inst
+            )
             log_info(
                 f"Prompt generated: {len(cleaned_prompt)} chars | "
                 f"model={response.model} | "

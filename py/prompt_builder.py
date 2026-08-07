@@ -3,14 +3,9 @@ ComfyUI-Minimax-H3-Promptor
 This custom node for ComfyUI provides automation suite for generating MiniMax H3 prompts.
 
 This integration script follows GPL-3.0 License.
-When using or modifying this code, please respect both the original model licenses
-and this integration's license terms.
-
-Source: https://github.com/1038lab/ComfyUI-Minimax-H3-Promptor
 """
 
 from pathlib import Path
-
 from .utils import log_info, log_error, log_debug
 
 
@@ -28,56 +23,91 @@ class PromptBuilder:
         self,
         task_type: str,
         template_override: str | None = None,
+        duration: float = 5.0,
     ) -> str:
         """
         Assemble the complete system prompt from template files.
-
-        Composition:
-        1. system_base.txt (always loaded — core H3 rules)
-        2. Task-specific template (t2v.txt, i2va.txt, etc.)
-        3. Optional user-specified template override
-
-        Args:
-            task_type: One of T2V, I2VA, FL2VA, Ref2VA.
-            template_override: Optional custom template filename.
-
-        Returns:
-            Complete system prompt string.
         """
         parts = []
 
-        # 1. Base rules (always included)
         base = self._load_template("system_base.txt")
         if base:
-            parts.append(base)
+            # Inject budget based on duration (approx 20-30 words per second)
+            budget = int(duration * 25)
+            budget_str = f"Word Budget Constraint: Approximately {budget} English words. Prioritize action over fluff."
+            parts.append(f"{base}\n\n{budget_str}")
         else:
-            log_error("system_base.txt not found! Using minimal fallback.")
             parts.append(self._fallback_base())
 
-        # 2. Task-specific template
         if template_override and template_override != "default":
             task_template = self._load_template(template_override)
-            if task_template:
-                parts.append(task_template)
-            else:
-                log_error(f"Template '{template_override}' not found, using default.")
+            if not task_template:
                 task_template = self._load_template(f"{task_type.lower()}.txt")
-                if task_template:
-                    parts.append(task_template)
         else:
             task_template = self._load_template(f"{task_type.lower()}.txt")
-            if task_template:
-                parts.append(task_template)
+        
+        if task_template:
+            parts.append(task_template)
 
         return "\n\n".join(parts)
+
+    def generate_alignment_instruction(self, task_type: str, duration: float, image_count: int) -> str:
+        """
+        Produce mathematically precise FL2VA alignment strings.
+        S.SS is floored based on the 17k+5 frame grid to ensure it doesn't fall off the edge.
+        """
+        if task_type != "FL2VA" or image_count < 2:
+            return ""
+
+        # Using the formula from minimax_plan.py
+        s = "%.2f" % (int(round(max(0.0, float(duration)) * 10000)) // 100 / 100.0)
+        
+        return (f"How the reference pictures align with the target video — <Picture 1> "
+                f"(from [Shot 1]) aligns with the 0.00-second mark of the target video; "
+                f"<Picture 2> (from [Shot 2]) aligns with the {s}-second mark of the target video.")
+
+    def generate_subject_definitions(self, image_count: int, has_video: bool, parsed_vision_dict: dict = None) -> str:
+        """
+        Programmatically generate exact MiniMax syntax for binding reference tokens.
+        """
+        lines = []
+        if parsed_vision_dict:
+            for i in range(image_count):
+                key = f"<Picture {i+1}>"
+                desc = parsed_vision_dict.get(key, "")
+                if desc:
+                    lines.append(f"{key} is {desc}")
+                else:
+                    lines.append(f"{key} acts as a visual anchor.")
+            if has_video:
+                key = "<Video 1>"
+                desc = parsed_vision_dict.get(key, "")
+                if desc:
+                    lines.append(f"{key} is the reference video: {desc}")
+                else:
+                    lines.append(f"{key} is the reference video.")
+            return " ".join(lines)
+        else:
+            if image_count > 0:
+                pictures = " and ".join(f"<Picture {i+1}>" for i in range(image_count))
+                lines.append(f"<Subject 1> is the primary focus shown in {pictures}.")
+                for i in range(image_count):
+                    lines.append(f"<Picture {i+1}> acts as a visual anchor.")
+            
+            if has_video:
+                lines.append("<Video 1> is the reference video: follow its motion and camera work exactly.")
+            
+            return " ".join(lines)
 
     def build_user_message(
         self,
         description: str,
-        duration: int,
+        duration: float,
         task_type: str,
         vision_context: str = "",
-        output_language: str = "English"
+        output_language: str = "English",
+        image_count: int = 0,
+        has_video: bool = False
     ) -> str:
         """
         Construct the main user instruction string dynamically based on the available inputs.
@@ -89,7 +119,19 @@ class PromptBuilder:
             
         msg += f"Primary Target User Description:\n{description}\n\n"
         
-        msg += f"Constraint: The video will be {duration} seconds long (approx. {duration * 24} frames). Pace the [SCENE] descriptions accordingly.\n"
+        # Inject exact constraints
+        msg += f"Constraint: The video will be {duration} seconds long (approx. {int(duration * 24)} frames). Pace the [Shot N] descriptions accordingly.\n"
+        
+        # Inject tagging requirements
+        available_tags = []
+        for i in range(image_count):
+            available_tags.append(f"<Picture {i+1}>")
+        if has_video:
+            available_tags.append("<Video 1>")
+            
+        if available_tags:
+            msg += f"CRITICAL: You have the following media references available: {', '.join(available_tags)}.\n"
+            msg += "You MUST physically insert these exact tags into your [Shot N] sentences to explicitly dictate which subject/motion appears in which shot. For example: `<Picture 1> enters the room, adopting the posture shown in <Video 1>`.\n"
         
         if output_language.lower() == "chinese":
             msg += "\n\nCRITICAL LANGUAGE CONSTRAINT:\nYou MUST write the ENTIRE OUTPUT PROMPT in Simplified Chinese (简体中文). Translate all technical film directions into equivalent Chinese terms."
@@ -99,46 +141,24 @@ class PromptBuilder:
         return msg
 
     def get_available_templates(self) -> list[str]:
-        """
-        List available template files for the dropdown selector.
-
-        Returns:
-            List of template filenames (excluding system_base.txt).
-        """
         templates = ["default"]
-
         if not self.templates_dir.exists():
             return templates
-
         for f in sorted(self.templates_dir.glob("*.txt")):
             if f.stem != "system_base":
                 templates.append(f.name)
-
         return templates
 
     def _load_template(self, filename: str) -> str | None:
-        """Load a template file by name."""
         path = self.templates_dir / filename
         if not path.exists():
-            log_debug(f"Template not found: {path}")
             return None
-
         try:
             with open(path, "r", encoding="utf-8") as f:
-                content = f.read().strip()
-            log_debug(f"Loaded template: {filename} ({len(content)} chars)")
-            return content
+                return f.read().strip()
         except IOError as e:
-            log_error(f"Failed to read template {filename}: {e}")
             return None
 
     @staticmethod
     def _fallback_base() -> str:
-        """Minimal fallback if system_base.txt is missing."""
-        return (
-            "You are a professional MiniMax H3 prompt writer. "
-            "Generate structured, cinema-production-grade prompts "
-            "following the H3 specification. Use clear section headers "
-            "like [REFERENCE USE], [SHOT LIST], [PRODUCTION SOUND], etc. "
-            "Output only the raw prompt text with no wrappers."
-        )
+        return "You are a professional MiniMax H3 prompt writer."
