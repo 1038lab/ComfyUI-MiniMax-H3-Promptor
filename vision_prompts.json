@@ -1,13 +1,3 @@
-/*
-ComfyUI-Minimax-H3-Promptor
-This custom node for ComfyUI provides automation suite for generating MiniMax H3 prompts.
-
-This integration script follows GPL-3.0 License.
-When using or modifying this code, please respect both the original model licenses
-and this integration's license terms.
-
-Source: https://github.com/1038lab/ComfyUI-Minimax-H3-Promptor
-*/
 {
     "image_prompts": {
         "Subject / Identity": "Focus exclusively on describing the main subject's appearance, facial features, and clothing.",
