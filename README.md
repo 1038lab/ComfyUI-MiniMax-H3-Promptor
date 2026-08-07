@@ -8,25 +8,36 @@ This project provides a robust, decoupled architecture separating **multimodal v
 
 ---
 
+## 🎉 What's New in [V1.1.0](updates.md#release-notes-v110) (Refined Architecture)
+
+*   **Zero-Hallucination Inline Tagging**: The Prompt LLM now natively embeds `<Picture X>` references directly inside the narrative action lines, guaranteeing 100% compliance with official MiniMax tag-binding requirements.
+*   **Sequential Multi-Modal Processing**: Upgraded the Vision Analyzer to process inputs sequentially. This eliminates Multi-Modal LLM context bleeding and guarantees proxy API limits are never exceeded.
+*   **Flawless 6-Part Official Syntax Compliance**: Our structural generation has been de-patched. The Promptor now strictly assembles the mandatory 6-part string array (`subject_definitions`, `summary`, `retention`, etc.) in the exact sequence HuggingFace mandates.
+*   **Audio Pipeline Fix**: Completely restored routing logic for Native Audio paths (Audio-to-Video and Image-to-Audio).
+*   **Custom Node Theming**: Added native UI coloring support for ComfyUI (`appearance.js`).
+
+---
+
 ## 🌟 The V1.0.0 Decoupled Architecture
 
 The pipeline consists of two nodes working in tandem to handle extreme complexity without duplicating LLM vision costs:
 
 ### 1. `H3_Vision_Analyzer` 👁️
 A highly configurable multimodal analysis engine. This node acts as your virtual Director of Photography, analyzing input imagery and video based on explicit presets.
-*   **4 Image Slots + 1 Video Slot**: Analyze up to 4 images and a batch of video keyframes simultaneously.
-*   **JSON-Backed Presets**: Every media slot features a dynamic dropdown populated by an auto-generated `vision_prompts.json` file. You can instruct the VLM to analyze *only* the character, *only* the lighting, or the *entire composition*. 
-*   **Add Your Own Options**: You can add unlimited new analysis strategies by simply editing the `vision_prompts.json` file in the node directory. The dropdowns update on restart!
+*   **Infinite Dynamic Scaling**: Upgraded to ComfyAPI v3 `io.Autogrow`. You are no longer limited to 4 images. Connect as many Images and Videos as you want seamlessly.
+*   **Targeted Custom Overrides**: Use the `custom_prompt_override` box to type rules like `<Picture 2>: Focus entirely on the background`. It will surgically override the global mode for that exact frame!
+*   **Invisible Heavy VRAM Management**: Automatically detects when you are using local models like `Ollama` and safely unloads them behind the scenes to preserve VRAM for the actual H3 video generation.
 *   **Multilingual Output**: Choose between English and Chinese for the analysis output language.
-*   **Outputs**: Produces a structured text-based `vision_context` that is sent to the Promptor node, completely uncoupling image arrays from the final text pipeline.
+*   **Outputs**: Produces a structured JSON-backed `vision_context` that is sent to the Promptor node, completely uncoupling image arrays from the final text pipeline.
 
 #### Vision Analyzer Inputs
 | Parameter | Type | Description |
 |-----------|------|-------------|
-| `image_ref_1..4` | IMAGE | Image tensors to analyze. |
-| `mode_1..4` | COMBO | Selects the specific analysis logic from `vision_prompts.json` for each image. |
-| `video_ref` | IMAGE | Video batch tensor. Up to 4 keyframes are extracted and analyzed. |
-| `mode_video` | COMBO | Video-specific analysis logic. |
+| `ref_images` | IMAGE | Connect one or multiple images; dynamically grows infinitely (`image_X`). |
+| `ref_videos` | IMAGE | Connect video tensor sequences; dynamically grows (`video_X`). |
+| `global_image_mode` | COMBO | Selects the global fallback analysis logic from `vision_prompts.json` for all images. |
+| `global_video_mode` | COMBO | Selects the global fallback analysis logic from `vision_prompts.json` for all videos. |
+| `custom_prompt_override`| STRING | A multi-line box to surgically override specific media logic. E.g: `<Picture 2>: focus on the lighting`. |
 | `output_language` | COMBO | Language for the analysis output (`English` or `Chinese`). |
 | `provider` | COMBO | `openai`, `ollama`, `gemini`, or `claude`. |
 | `api_key` | STRING | API Key override (leaves `config.json` untouched). |
@@ -77,7 +88,25 @@ All 4 providers are implemented as **independent, native API integrations** — 
 | **Gemini** | `provider_gemini.py` | Google `generateContent` | `gemini-2.5-flash` | URL `?key=` param |
 | **Claude** | `provider_claude.py` | Anthropic Messages API | `claude-sonnet-4-20250514` | `x-api-key` Header |
 
+> **Local & Compatible APIs (LMStudio, llama.cpp, DeepSeek, etc.)**: 
+> Because LMStudio, llama.cpp, vLLM, and many other providers use the standard OpenAI API format, they are fully supported out of the box! Simply select **OpenAI** as your provider and update the `"api_base"` URL in your `config.json` to point to your local or custom endpoint (e.g., `"http://localhost:1234/v1"` for LMStudio). You can use any dummy string for local API keys.
+> 
+> *Popular compatible APIs you can use with the OpenAI setting:*
+> *   **DeepSeek**: Highly affordable and powerful models, very popular.
+> *   **Groq**: Lightning-fast inference API powered by LPU hardware.
+> *   **OpenRouter**: A model aggregator platform widely used by international users.
+> *   **Together AI / SiliconFlow**: APIs providing access to various open-source models (like Llama 3).
+
 > All providers support multimodal (image) inputs for the Vision Analyzer node.
+
+---
+
+## 🌟 Workflow Recipes & Tutorials
+
+Want to learn how to do **Lip-Syncing, Character Interaction, Video Style Transfer**, or **High-End Product Commercials**?
+
+👉 **[Click here to view the Master Workflow Tutorials](tutorials.md)**
+👉 **[点击这里查看 8 大经典实战工作流教程 (中文版)](tutorials_zh.md)**
 
 ---
 
