@@ -33,7 +33,7 @@ Release Notes: (Settings Hub & Core Architecture Overhaul)
 
 ---
 ## V1.1.0 (2026/08/07)
-
+![ComfyUI MiniMax H3-Promptor](example_workflows/MiniMax-H3-Promptor.jpg)
 ### Infinite Dynamic Sockets (ComfyAPI v3 Autogrow)
 - **Limitless scaling**: Refactored the `H3_Vision_Analyzer` to completely utilize ComfyUI's native API v3 `Autogrow` inputs. The rigid 4-image limit is gone. Users can now infinitely chain as many `<Picture>` and `<Video>` references as their ComfyUI can handle without cluttering the screen with unused ports.
 
