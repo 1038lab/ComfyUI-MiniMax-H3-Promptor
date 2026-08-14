@@ -66,6 +66,41 @@ class PostProcessor:
         return "\n".join(kept).strip(), " ".join(sound).strip(), " ".join(music).strip()
 
     @staticmethod
+    def construct_ref_blocks(task_type: str, subject_definitions: str) -> tuple[str, str]:
+        if not subject_definitions.strip():
+            return "", ""
+
+        tags = set(re.findall(r'<(?:Subject|Picture|Video|Audio)\s+\d+>', subject_definitions))
+        if not tags:
+            return "", ""
+
+        prefix_parts = []
+        if task_type in ["I2V", "I2VA", "FL2VA", "L2VA"]:
+            prefix_parts.append("keyframe completion")
+        elif task_type in ["V2V", "V2VA"]:
+            prefix_parts.append("video editing")
+        elif task_type in ["Ref2VA"]:
+            prefix_parts.append("reference generation")
+
+        if any(t.startswith("<Audio") for t in tags):
+            if not any(p == "audio reference" for p in prefix_parts):
+                prefix_parts.append("audio reference")
+        
+        prefix = " + ".join(prefix_parts) if prefix_parts else "reference generation"
+        
+        summary = f"summary:\n[{prefix}] The target video executes the requested generation using the provided references."
+
+        retention = ["retention_analysis:"]
+        sorted_tags = sorted(list(tags))
+        for tag in sorted_tags:
+            if tag.startswith("<Audio"):
+                retention.append(f"{tag}: reference - the audio characteristics or content guide the target video.")
+            else:
+                retention.append(f"{tag} (appears in target video): fully_preserved - the visual characteristics are retained.")
+        
+        return summary, "\n".join(retention)
+
+    @staticmethod
     def compile_final_prompt(
         creative_text: str,
         task_type: str,
@@ -87,9 +122,15 @@ class PostProcessor:
 
         # 3. Programmatic subject definitions
         if subject_definitions.strip():
-            parts.append("subject_definitions: " + subject_definitions.strip())
+            parts.append("subject_definitions:\n" + subject_definitions.strip())
             
-        # 4. Summary & Retention blocks (dynamically compiled in alignment_instructions)
+            summary_block, retention_block = PostProcessor.construct_ref_blocks(task_type, subject_definitions)
+            if summary_block:
+                parts.append(summary_block)
+            if retention_block:
+                parts.append(retention_block)
+
+        # 4. Alignment instructions
         if alignment_instructions.strip():
             parts.append(alignment_instructions.strip())
 

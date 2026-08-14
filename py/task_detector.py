@@ -11,7 +11,7 @@ Source: https://github.com/1038lab/ComfyUI-Minimax-H3-Promptor
 
 
 # Valid H3 task types
-TASK_TYPES = ["T2V", "I2V", "I2VA", "V2V", "V2VA", "A2V", "FL2VA", "Ref2VA"]
+TASK_TYPES = ["T2V", "I2V", "I2VA", "V2V", "V2VA", "A2V", "FL2VA", "Ref2VA", "L2VA"]
 
 # Full descriptions for UI
 TASK_DESCRIPTIONS = {
@@ -22,7 +22,8 @@ TASK_DESCRIPTIONS = {
     "V2VA": "Video-to-Video-Audio (V2VA)",
     "A2V": "Audio-to-Video (A2V)",
     "FL2VA": "First-and-Last-Frame-to-Video (FL2VA)",
-    "Ref2VA": "Reference-to-Video-Audio (Ref2VA)"
+    "Ref2VA": "Reference-to-Video-Audio (Ref2VA)",
+    "L2VA": "Last-Frame-to-Video-Audio (L2VA)"
 }
 
 # User-facing options (includes Auto)
@@ -90,5 +91,6 @@ class TaskDetector:
             "A2V": "Audio-to-Video (audio reference)",
             "FL2VA": "First/Last Frame (two boundary images)",
             "Ref2VA": "Omni Reference (multi-modal references)",
+            "L2VA": "Last Frame Anchor (end frame constraints)",
         }
         return descriptions.get(task_type, f"Unknown ({task_type})")

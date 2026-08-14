@@ -16,9 +16,7 @@ from .post_processor import PostProcessor
 from .utils import log_info, log_error, _create_provider
 
 
-# Provider options
-PROVIDERS = ["openai", "ollama", "gemini", "claude"]
-
+from .config_manager import get_config_manager
 
 class H3_Promptor:
 
@@ -27,6 +25,33 @@ class H3_Promptor:
 
     @classmethod
     def INPUT_TYPES(s):
+        try:
+            _config = get_config_manager().load()
+            active_providers = []
+            default_uuid = _config.get("defaults", {}).get("promptor_provider", "")
+            default_choice = ""
+            
+            for k, v in _config.get("providers", {}).items():
+                if v.get("enabled", True) is not False:
+                    model_name = v.get("model", "")
+                    name = f"{v.get('name', k)} ({model_name})" if model_name else v.get("name", k)
+                    active_providers.append(name)
+                    if k == default_uuid:
+                        default_choice = name
+            
+            active_providers.sort()
+            
+            if not default_choice and active_providers:
+                default_choice = active_providers[0]
+                
+            if not active_providers:
+                active_providers = ["No Provider Configured"]
+                default_choice = active_providers[0]
+                
+        except Exception:
+            active_providers = ["Error Loading Providers"]
+            default_choice = active_providers[0]
+
         return {
             "required": {
                 "task_type": (TASK_TYPE_OPTIONS, {
@@ -39,8 +64,8 @@ class H3_Promptor:
                     "tooltip": "Your main creative description of the scene.",
                 }),
                 "duration": ("FLOAT", {
-                    "default": 5, "min": 2, "max": 15, "step": 0.5,
-                    "tooltip": "Vaild duration for Minimax H3 is 2-15 seconds.",
+                    "default": 5, "min": 4, "max": 15, "step": 0.5,
+                    "tooltip": "Vaild duration for Minimax H3 is 4-15 seconds.",
                 }),
             },
             "optional": {
@@ -66,17 +91,9 @@ class H3_Promptor:
                     "default": "English",
                     "tooltip": "The language the Minimax H3 system will receive the prompt in."
                 }),
-                "provider": (PROVIDERS, {
-                    "default": "openai",
+                "provider": (active_providers, {
+                    "default": default_choice,
                     "tooltip": "LLM provider to use for text generation.",
-                }),
-                "api_key": ("STRING", {
-                    "default": "",
-                    "tooltip": "API key override.",
-                }),
-                "model_name": ("STRING", {
-                    "default": "",
-                    "tooltip": "Model override (e.g. gpt-4o, claude-3-5).",
                 }),
                 "temperature": ("FLOAT", {
                     "default": 0.7, "min": 0.0, "max": 1.0, "step": 0.05
@@ -102,9 +119,7 @@ class H3_Promptor:
         reference_videos: str = "Auto",
         reference_audios: str = "Auto",
         output_language: str = "English",
-        provider: str = "openai",
-        api_key: str = "",
-        model_name: str = "",
+        provider: str = "",
         temperature: float = 0.2,
         max_tokens: int = 4096,
     ):
@@ -159,7 +174,7 @@ class H3_Promptor:
             log_info(f"Task type: {TaskDetector.get_task_description(detected_type)}")
 
             # 4. Generate system and user prompts
-            system_prompt = self.prompt_builder.build_system_prompt(detected_type, duration=duration)
+            system_prompt = self.prompt_builder.build_system_prompt(detected_type, duration=duration, output_language=output_language)
             
             user_message = self.prompt_builder.build_user_message(
                 description, duration, detected_type, vision_context=vision_context, output_language=output_language,
@@ -168,13 +183,12 @@ class H3_Promptor:
 
             # 4. Get LLM provider
             config_manager = get_config_manager()
-            llm = _create_provider(provider, config_manager, api_key)
+            provider_key = config_manager.find_provider_by_display_name(provider)
+            llm = _create_provider(provider_key, config_manager)
 
-            # 5. Call LLM (with overrides)
-            model_override = model_name if model_name.strip() else None
             log_info(
-                f"Calling {provider} | "
-                f"model={model_override or llm.model} | "
+                f"Calling {provider_key} | "
+                f"model={llm.model} | "
                 f"temp={temperature}"
             )
 
@@ -185,7 +199,6 @@ class H3_Promptor:
                 base64_images=None,
                 temperature=temperature,
                 max_tokens=max_tokens,
-                model=model_override,
             )
 
             if not response.success:
@@ -202,7 +215,7 @@ class H3_Promptor:
             task_desc = TaskDetector.get_task_description(detected_type)
             
             # Dynamically compute subject definitions and alignment strings in Python
-            subject_defs = self.prompt_builder.generate_subject_definitions(image_count, has_video, parsed_vision_dict=parsed_vision_dict)
+            subject_defs = self.prompt_builder.generate_subject_definitions(image_count, has_video, has_audio, parsed_vision_dict=parsed_vision_dict)
             alignment_inst = self.prompt_builder.generate_alignment_instruction(detected_type, duration, image_count)
             
             cleaned_prompt = PostProcessor.clean(

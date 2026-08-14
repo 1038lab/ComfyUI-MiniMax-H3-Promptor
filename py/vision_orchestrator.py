@@ -1,0 +1,259 @@
+"""
+ComfyUI-Minimax-H3-Promptor
+This custom node for ComfyUI provides automation suite for generating MiniMax H3 prompts.
+
+This integration script follows GPL-3.0 License.
+"""
+
+from .utils import log_info, log_error, tensor_to_base64
+
+
+def _get_iterable(media_input):
+    """Safely convert ComfyAPI dict/list/tuple/None inputs into a flat iterable."""
+    if not media_input:
+        return []
+    if isinstance(media_input, dict):
+        return media_input.values()
+    if isinstance(media_input, (list, tuple)):
+        return media_input
+    return [media_input]
+
+
+class VisionOrchestrator:
+    """
+    Stateless orchestrator that dispatches multi-modal LLM calls
+    for the H3 Vision Analyzer node.
+
+    All media processing logic (batch images, sequential images, videos,
+    and Global Vibe synthesis) is encapsulated here, keeping the node
+    endpoint clean.
+    """
+
+    def __init__(
+        self,
+        llm,
+        prompt_builder,
+        response_parser_cls,
+        system_prompt: str,
+        vibe_system_prompt: str,
+        temperature: float,
+        max_tokens: int,
+        model_override: str,
+    ):
+        self.llm = llm
+        self.pb = prompt_builder
+        self.parser = response_parser_cls
+        self.system_prompt = system_prompt
+        self.vibe_system_prompt = vibe_system_prompt
+        self.temperature = temperature
+        self.max_tokens = max_tokens
+        self.model = model_override
+
+    # ------------------------------------------------------------------
+    # Public entry point
+    # ------------------------------------------------------------------
+
+    def analyze_all(
+        self,
+        ref_images,
+        ref_videos,
+        presets: dict,
+        overrides: dict,
+        global_image_mode: str,
+        global_video_mode: str,
+        output_language: str,
+        batch_vision: bool,
+        provider_label: str,
+    ) -> tuple[dict, list]:
+        """
+        Process all media and return (final_dict, media_keys).
+
+        Parameters
+        ----------
+        ref_images / ref_videos : ComfyUI Autogrow inputs (dict | list | None)
+        presets : loaded vision_prompts.json dict
+        overrides : per-key prompt overrides from PromptBuilder.parse_overrides()
+        global_image_mode / global_video_mode : preset keys selected in the UI
+        output_language : "English" | "Chinese"
+        batch_vision : True = single API call for all images; False = one per image
+        provider_label : display label for log messages
+        """
+        media_keys: list[str] = []
+        final_dict: dict = {}
+
+        img_list = [img for img in _get_iterable(ref_images) if img is not None]
+        vid_iterable = [vid for vid in _get_iterable(ref_videos) if vid is not None]
+
+        # 1. Process images
+        if img_list:
+            if batch_vision:
+                self._process_images_batch(
+                    img_list, presets, overrides, global_image_mode,
+                    output_language, provider_label, media_keys, final_dict,
+                )
+            else:
+                self._process_images_sequential(
+                    img_list, presets, overrides, global_image_mode,
+                    output_language, provider_label, media_keys, final_dict,
+                )
+
+        # 2. Process videos (always one per call)
+        if vid_iterable:
+            self._process_videos(
+                vid_iterable, presets, overrides, global_video_mode,
+                output_language, provider_label, media_keys, final_dict,
+            )
+
+        # 3. Global Vibe synthesis (text-only summarisation)
+        if final_dict:
+            self._process_vibe(
+                presets, overrides, global_image_mode,
+                output_language, provider_label, final_dict,
+            )
+
+        return final_dict, media_keys
+
+    # ------------------------------------------------------------------
+    # Private helpers
+    # ------------------------------------------------------------------
+
+    @staticmethod
+    def _get_prompt_str(presets: dict, mode: str, is_video: bool = False) -> str:
+        dict_key = "video_prompts" if is_video else "image_prompts"
+        return presets.get(dict_key, {}).get(mode, "Analyze visually.")
+
+    def _call_llm(self, system_prompt, user_message, payload):
+        return self.llm.chat(
+            system_prompt=system_prompt,
+            user_message=user_message,
+            base64_images=payload,
+            temperature=self.temperature,
+            max_tokens=self.max_tokens,
+            model=self.model,
+        )
+
+    # -- Image: Batch --------------------------------------------------
+
+    def _process_images_batch(
+        self, img_list, presets, overrides, global_image_mode,
+        output_language, provider_label, media_keys, final_dict,
+    ):
+        """Send all images to the LLM in a single interleaved request."""
+        chunk_keys = []
+        instructions = []
+        all_frames = []
+
+        img_index = 1
+        pos = 1
+        for img in img_list:
+            target_key = f"<Picture {img_index}>"
+            media_keys.append(target_key)
+            chunk_keys.append(target_key)
+            frames = tensor_to_base64(img, max_frames=1)
+            active_prompt = overrides.get(target_key, self._get_prompt_str(presets, global_image_mode))
+            instructions.append(
+                self.pb.build_vision_request(output_language, target_key, active_prompt, pos=pos)
+            )
+            all_frames.extend(frames)
+            img_index += 1
+            pos += 1
+
+        mega_prompt = "Order of attached media:\n" + "\n".join(instructions)
+        payload = [{"text": mega_prompt}]
+        for f in all_frames:
+            payload.append({"image": f})
+
+        log_info(f"Analyzer calling {provider_label} for ALL IMAGES ({len(chunk_keys)} items) in BATCH mode...")
+        response = self._call_llm(self.system_prompt, "", payload)
+
+        if response.success:
+            parsed = self.parser.parse_vision_response(response.content, chunk_keys)
+            final_dict.update(parsed)
+        else:
+            log_error(f"API Error in Image Batch: {response.error}")
+            for key in chunk_keys:
+                final_dict[key] = f"API Error: {response.error}"
+
+    # -- Image: Sequential ---------------------------------------------
+
+    def _process_images_sequential(
+        self, img_list, presets, overrides, global_image_mode,
+        output_language, provider_label, media_keys, final_dict,
+    ):
+        """Send one image per API request to prevent local VLM OOM / confusion."""
+        log_info(f"Analyzer calling {provider_label} for SEQUENTIAL image processing...")
+        img_index = 1
+        for img in img_list:
+            target_key = f"<Picture {img_index}>"
+            media_keys.append(target_key)
+
+            frames = tensor_to_base64(img, max_frames=1)
+            active_prompt = overrides.get(target_key, self._get_prompt_str(presets, global_image_mode))
+            single_prompt = self.pb.build_vision_request(output_language, target_key, active_prompt, pos=1)
+
+            payload = [{"text": single_prompt}]
+            for f in frames:
+                payload.append({"image": f})
+
+            response = self._call_llm(self.system_prompt, "", payload)
+
+            if response.success:
+                parsed = self.parser.parse_vision_response(response.content, [target_key])
+                final_dict.update(parsed)
+            else:
+                log_error(f"API Error in Image {img_index}: {response.error}")
+                final_dict[target_key] = f"API Error: {response.error}"
+
+            img_index += 1
+
+    # -- Video ---------------------------------------------------------
+
+    def _process_videos(
+        self, vid_iterable, presets, overrides, global_video_mode,
+        output_language, provider_label, media_keys, final_dict,
+    ):
+        """Process each video individually (1 API call per video)."""
+        vid_index = 1
+        for vid in vid_iterable:
+            target_key = f"<Video {vid_index}>"
+            media_keys.append(target_key)
+            frames = tensor_to_base64(vid, max_frames=4)
+            active_prompt = overrides.get(target_key, self._get_prompt_str(presets, global_video_mode, is_video=True))
+
+            mega_prompt = self.pb.build_vision_request(
+                output_language, target_key, active_prompt, is_video=True, num_frames=len(frames)
+            )
+            payload = [{"text": mega_prompt}]
+            for f in frames:
+                payload.append({"image": f})
+
+            log_info(f"Analyzer calling {provider_label} for {target_key} ({len(frames)} frames)...")
+            response = self._call_llm(self.system_prompt, "", payload)
+
+            if response.success:
+                parsed = self.parser.parse_vision_response(response.content, [target_key])
+                final_dict.update(parsed)
+            else:
+                log_error(f"API Error in Video {vid_index}: {response.error}")
+                final_dict[target_key] = f"API Error: {response.error}"
+
+            vid_index += 1
+
+    # -- Global Vibe ---------------------------------------------------
+
+    def _process_vibe(
+        self, presets, overrides, global_image_mode,
+        output_language, provider_label, final_dict,
+    ):
+        """Text-only synthesis call for the Global Vibe summary."""
+        vibe_prompt_en = overrides.get("Global_Vibe", self._get_prompt_str(presets, global_image_mode))
+        vibe_message = self.pb.build_vibe_request(output_language, final_dict, vibe_prompt_en)
+
+        log_info(f"Analyzer calling {provider_label} for Global Vibe synthesis...")
+        vibe_res = self._call_llm(self.vibe_system_prompt, vibe_message, None)
+
+        if vibe_res.success:
+            parsed = self.parser.parse_vision_response(vibe_res.content, ["Global_Vibe"])
+            final_dict.update(parsed)
+        else:
+            final_dict["Global_Vibe"] = f"API Error: {vibe_res.error}"

@@ -1,0 +1,24 @@
+{
+    "ASPECT_RATIOS": {
+        "1:1 (Square)": [1, 1],
+        "2:3 (Portrait Photo)": [2, 3],
+        "3:2 (Photo)": [3, 2],
+        "3:4 (Portrait Standard)": [3, 4],
+        "4:3 (Standard)": [4, 3],
+        "9:16 (Portrait Widescreen)": [9, 16],
+        "16:9 (Widescreen)": [16, 9],
+        "21:9 (Ultrawide)": [21, 9]
+    },
+    "DEFAULT_DIFFUSION_MODEL": "minimax_h3_ref2va_pruned_int8_convrot.safetensors",
+    "DEFAULT_CLIP": "qwen3vl_32b_minimax_h3_nvfp4_awq.safetensors",
+    "DEFAULT_VIDEO_VAE": "minimax_h3_video_vae_fp16.safetensors",
+    "DEFAULT_AUDIO_VAE": "minimax_h3_audio_vae_fp32.safetensors",
+    "CLIP_TYPES": [
+        "stable_diffusion", "stable_cascade", "sd3", "stable_audio", "mochi", "ltxv",
+        "pixart", "cosmos", "lumina2", "wan", "hidream", "chroma", "ace", "omnigen2",
+        "qwen_image", "hunyuan_image", "flux2", "ovis", "longcat_image", "cogvideox",
+        "lens", "pixeldit", "ideogram4", "boogu", "krea2", "joyimage", "mage", "minimax"
+    ],
+    "OUTPUT_FPS": 24.0,
+    "WEIGHT_DTYPES": ["default", "fp8_e4m3fn", "fp8_e4m3fn_fast", "fp8_e5m2"]
+}

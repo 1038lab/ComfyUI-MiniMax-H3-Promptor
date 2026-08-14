@@ -115,7 +115,7 @@ class OpenAIProvider(LLMProvider):
                         time.sleep(RETRY_DELAY)
                         continue
                     return LLMResponse(
-                        error=f"Server error (HTTP {response.status_code}) after retries.",
+                        error=f"Server error (HTTP {response.status_code}) after retries: {response.text[:200]}",
                         model=model_name,
                     )
 
