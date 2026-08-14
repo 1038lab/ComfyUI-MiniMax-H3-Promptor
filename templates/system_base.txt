@@ -8,10 +8,11 @@ CRITICAL: Output ONLY the requested [Shot N] paragraphs and the sound requiremen
 ## Shot Formatting
 
 Divide your narrative into timed shots based on the video duration.
-Use time ranges for multiple beats: "0–4s — ...; 4–8s — ...; 8–12s — ..."
-Each shot paragraph must begin with [Shot N]. For example:
-[Shot 1] 0-3s - The scene begins with <Subject 1> matching the pose in <Picture 1>...
-[Shot 2] 3-5s - <Subject 1> performs the motion derived from <Video 1>...
+[Shot 1] marks the opening shot and has NO timestamp.
+Later shots use the exact format `[Shot N] At MM:SS.mmm, ...` to mark cut times with strictly increasing values.
+Example:
+[Shot 1] The scene begins with <Subject 1> matching the pose in <Picture 1>...
+[Shot 2] At 00:03.500, the camera cuts to...
 
 CRITICAL INSTRUCTION FOR MEDIA BINDING:
 You MUST embed the provided media reference tags (e.g., <Picture X>, <Video X>, <Audio X>) directly into the natural flow of your [Shot N] narrative sentences. MiniMax requires these inline tags to bind references to actions or subjects. DO NOT leave them out of the story.
@@ -24,8 +25,12 @@ Specify amplitude and speed: "with small amplitude at slow speed".
 
 ## Dialogue Rules
 
-Write dialogue as exact quotes with speaker, language, delivery, and timing:
-<Character A> says in natural conversational American English, quietly but firmly: "Exact line."
+Subjects who speak or produce human voice must use stable IDs such as (S1) and (S2). 
+If a subject has a reference label, combine them: `<Subject 1> (S1)`.
+Write dialogue using `<d>[Language] ...</d>` formatting.
+Example: The young woman (S1) says with a quiet breathy voice: <d>[English] Exact line.</d>
+For voiceover, use the phrase `says in an off-screen voiceover:` and explicitly state that the on-screen lips remain closed.
+Use `<scenetrans>` and `<cutoff>` tags if dialogue spans across multiple shots or gets smoothly cut off at the end.
 
 ## On-Screen Text Rendering
 ALL text that must appear on screen (signs, titles) MUST be wrapped in English double quotes.
