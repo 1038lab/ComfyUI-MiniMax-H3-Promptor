@@ -6,9 +6,19 @@ This project provides a robust, decoupled architecture separating **multimodal v
 
 ![ComfyUI MiniMax H3-Promptor](example_workflows/MiniMax-H3-Promptor.jpg)
 
+## 🎉 What's New in V1.2.0 (Settings Hub & Core Architecture Overhaul)
+
+*   **Global Native Settings Panel**: Manage all LLM providers (including API Keys and Hot-Reload toggles) seamlessly via the native ComfyUI Gear Icon settings.
+*   **L2VA Mode & I2VA Frame Anchoring**: Added strict zero-second first-frame anchoring, and the new reverse L2VA mode to conclude exactly on a target pose.
+*   **Full-Reference Script Automation**: Programmatically injects exact schema structural tags (`summary:`, `retention_analysis`) and expands LLM word budgets without hallucination in complex multimodal setups.
+*   **Audio-First Token Syncing**: Introduces dedicated `<Audio N>` tracking tags and `(Sx)` conversational ID parsing to align lip movements properly to sound inputs.
+<img width="50%" alt="minimax-h3-setting" src="https://github.com/user-attachments/assets/81eda3f3-084c-4ac9-9e99-446afa1009dc" />
+
+👉 **[Read the full v1.2.0 Release Notes and Bug Fixes here (updates.md)](updates.md#v120-20260813)**
+
 ---
 
-## 🎉 What's New in [V1.1.0](updates.md#release-notes-v110) (Refined Architecture)
+## 🎉 Previous Updates: V1.1.0 (Refined Architecture)
 
 *   **Zero-Hallucination Inline Tagging**: The Prompt LLM now natively embeds `<Picture X>` references directly inside the narrative action lines, guaranteeing 100% compliance with official MiniMax tag-binding requirements.
 *   **Sequential Multi-Modal Processing**: Upgraded the Vision Analyzer to process inputs sequentially. This eliminates Multi-Modal LLM context bleeding and guarantees proxy API limits are never exceeded.
@@ -39,24 +49,27 @@ A highly configurable multimodal analysis engine. This node acts as your virtual
 | `global_video_mode` | COMBO | Selects the global fallback analysis logic from `vision_prompts.json` for all videos. |
 | `custom_prompt_override`| STRING | A multi-line box to surgically override specific media logic. E.g: `<Picture 2>: focus on the lighting`. |
 | `output_language` | COMBO | Language for the analysis output (`English` or `Chinese`). |
-| `provider` | COMBO | `openai`, `ollama`, `gemini`, or `claude`. |
-| `api_key` | STRING | API Key override (leaves `config.json` untouched). |
-| `model_name` | STRING | VLM Model override (e.g. `gpt-4o`, `gemini-2.5-flash`). |
+| `provider` | COMBO | Synchronizes with Settings. Pick `openai`, `anthropic`, `gemini`, `ollama` etc. |
 | `temperature` | FLOAT | Sampling temperature. Default `0.2` for precise factual analysis. |
 | `max_tokens` | INT | Maximum response tokens (256-8192). |
 
 ### 2. `H3_Promptor` 📝
 The core structure engine. It operates at blazing speeds because it takes the user's description and the Vision Analyzer's text report to format the final H3 Prompt—meaning **it does not need to repeatedly analyze heavy images.**
-*   **Intelligent Cross-Node `Auto` Detection**: Even though this node no longer connects to images directly, the `H3_Vision_Analyzer` invisibly stamps a hidden `[MEDIA_SIGNATURE]` encoded with your exact inputs. The `H3_Promptor` silently parses this signature and automatically selects the correct generation mode:
+### The "Auto" Multimodal Routing System
+The `H3_Promptor` uses a highly intelligent backend algorithm to instantly detect your intended generation mode without manual configuration. When left on **Auto**, the system evaluates the number of images, videos, and audio streams present in the `vision_context` and routes the formatting logic automatically:
 
-| Vision Inputs | Auto-Detected Mode |
-|---|---|
-| No media connected | **T2V** — Text-to-Video |
-| 1 image | **I2V** — Image-to-Video |
-| 2 images | **FL2VA** — First & Last Frame |
-| 3-4 images | **Ref2VA** — Omni Reference |
-| Video only | **V2V** — Video-to-Video |
-| Any images + Video | **Ref2VA** — Omni Reference |
+| Connected Media | Triggered Mode | Description |
+|---|---|---|
+| None | **T2V** | Pure Text-to-Video. No physical media anchors are generated. |
+| 1 Image | **I2V** | First-Frame conditioning. The provided image acts as the 0.00-second start state. |
+| 1 Image + Audio | **I2VA** | Image-to-Video with Audio reference. Perfect for lip-syncing a portrait. |
+| 1 Image (Manual) | **L2VA** | Last-Frame Anchor. Select `L2VA` manually in the dropdown to reverse-engineer a video that ends exactly on your image. |
+| 2 Images | **FL2VA** | First & Last Frame. Calculates the exact duration boundary to smoothly transition from state A to state B. |
+| 3+ Images / Any + Video | **Ref2VA** | Omni-Reference. Uses dynamic high-budget word allowances to construct complex multi-angle or object retention scenes. |
+| 1 Video | **V2V** | Video-to-Video editing. Inherits motion properties completely. |
+| Audio only | **A2V** | Audio-to-Video. Directs characters to speak or dance exclusively based on the target audio file. |
+
+*(If you wish to force a mode, such as **L2VA** which requires 1 image but acts as the ending frame, simply select it from the dropdown to override the Auto system).*
 
 *   **Language Selection**: Output the final cinematic prompt strictly in **Chinese (简体中文)** or **English**, seamlessly bridging international setups.
 *   **Duration Syncing**: Define how long your video is (4-15s), and the LLM will rigorously pace the structural shot-list to match that exact timeframe at 24FPS.
@@ -69,9 +82,7 @@ The core structure engine. It operates at blazing speeds because it takes the us
 | `duration` | INT | Desired video length (4-15 seconds). |
 | `vision_context` | STRING | Connect the output of `H3_Vision_Analyzer` here. Leave unconnected for pure T2V. |
 | `output_language` | COMBO | Output the resulting prompt in `English` or `Chinese`. |
-| `provider` | COMBO | `openai`, `ollama`, `gemini`, or `claude`. |
-| `api_key` | STRING | API Key override. |
-| `model_name` | STRING | Model override (e.g. `gpt-4o`, `claude-sonnet-4-20250514`). |
+| `provider` | COMBO | Synchronizes with Settings. Pick `openai`, `anthropic`, `gemini`, `ollama` etc. |
 | `temperature` | FLOAT | Sampling temperature. Default `0.7` for creative writing. |
 | `max_tokens` | INT | Maximum response tokens (256-8192). |
 
@@ -84,9 +95,9 @@ All 4 providers are implemented as **independent, native API integrations** — 
 | Provider | File | API Format | Default Model | Auth Method |
 |---|---|---|---|---|
 | **OpenAI** | `provider_openai.py` | `/v1/chat/completions` | `gpt-4o` | `Bearer` Token |
-| **Ollama** | `provider_ollama.py` | Ollama `/api/chat` | `llama3.1` | None (local) |
+| **Ollama** | `provider_ollama.py` | Ollama `/api/chat` | `llama3.2` | None (local) |
 | **Gemini** | `provider_gemini.py` | Google `generateContent` | `gemini-2.5-flash` | URL `?key=` param |
-| **Claude** | `provider_claude.py` | Anthropic Messages API | `claude-sonnet-4-20250514` | `x-api-key` Header |
+| **Anthropic** | `provider_claude.py` | Anthropic Messages API | `claude-3-5-sonnet-latest` | `x-api-key` Header |
 
 > **Local & Compatible APIs (LMStudio, llama.cpp, DeepSeek, etc.)**: 
 > Because LMStudio, llama.cpp, vLLM, and many other providers use the standard OpenAI API format, they are fully supported out of the box! Simply select **OpenAI** as your provider and update the `"api_base"` URL in your `config.json` to point to your local or custom endpoint (e.g., `"http://localhost:1234/v1"` for LMStudio). You can use any dummy string for local API keys.
@@ -122,18 +133,8 @@ Want to learn how to do **Lip-Syncing, Character Interaction, Video Style Transf
    ```bash
    pip install -r requirements.txt
    ```
-3. **Configuration (`config.json`)**:
-   On first load, the node will auto-create a `config.json` inside its folder. Open it and fill in your API keys:
-   ```json
-   {
-     "providers": {
-       "openai":  { "api_key": "sk-..." },
-       "gemini":  { "api_key": "AIza..." },
-       "claude":  { "api_key": "sk-ant-..." }
-     }
-   }
-   ```
-   > You can also override API keys directly on each node's UI without editing config.json.
+3. **Configuration (Native)**:
+   Once ComfyUI launches, click the **Gear Icon** (Settings) and navigate to **MiniMax H3**. From there, you can Add Custom Providers, enter API Base URLs, and set Default Models through the graphical interface natively!
 
 ---
 
