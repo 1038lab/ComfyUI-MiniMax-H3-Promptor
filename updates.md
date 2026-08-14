@@ -1,8 +1,38 @@
 # ComfyUI-Minimax-H3-Promptor Update Log
 
 ---
+## V1.2.0 (2026/08/13)
+Release Notes: (Settings Hub & Core Architecture Overhaul)
 
-## Release Notes: v1.1.0
+### 🌟 Highlight: Native ComfyUI Settings Integration (API Hub)
+- **Centralized API Management**: Completely removed the clunky `api_key` and `model_name` input fields from the Node interfaces. We built a beautiful, native-feeling ComfyUI Settings Panel (under the Gear icon -> MiniMax H3 API Settings) to manage all providers in one place globally.
+- **Provider Connection Tester**: Added an inline ping-tester directly in the API Settings Panel. Instantly click "Test" to verify if your Base URL and Key are active, completely eliminating workflow mid-generation crashes due to bad auths.
+- **Hot-Reload Node Dropdowns**: Disabling a provider via the toggle switch now takes *instant* effect (just refresh the browser with `F5`). There is no longer any need to explicitly reboot the Python ComfyUI server to update Node dropdowns.
+- **Native Toggles**: Upgraded the settings UI to feature standard ComfyUI iOS-style visual toggle switches.
+- **Streamlined Custom Node UI**: The Python nodes now only ask you to select a `Provider` from a dynamic dropdown (which syncs automatically to your panel) and retain only `temperature` and `max_tokens` for on-the-fly workflow tuning.
+
+### Dynamic Out-of-the-box Config & Hardware Stability
+- **Zero-Config Startup**: The auto-generated `config.json` now ships with 6 industry-standard APIs instantly pre-configured: `OpenAI`, `Anthropic`, `Gemini`, `Ollama`, `LlamaCPP`, and `LMStudio`. New users just drop in their Key and go!
+- **Anthropic Native Routing**: Cleaned up internal semantics to identify Claude standard as `Anthropic`.
+- **Ollama 500 & LLaVA Fixes**: Added critical pre-flight structural fixes for local vision models (like `llama3.2-vision`). It now intelligently folds `system` prompts into the `user` block and aggressively overrides `num_ctx` to dynamically prevent the notorious Ollama 500 VRAM Overload error.
+- **Agnostic Proxy Resilience**: Added explicit proxy error HTML response leaks to the error console so users can pinpoint exactly why an external OpenAI-compatible service returned a 503/500 down state.
+
+### Official MiniMax Syntax & Timeline Accuracy
+- **I2VA Frame Anchoring**: Added strict `<Picture 1>` zero-second frame anchoring directly into the visual output, ensuring the AI strictly adheres to the exact starting frame before extrapolating motion.
+- **Precise Scene Timestamps**: Upgraded the internal template structure to use strict cut times (`[Shot N] At MM:SS.mmm, ...`) instead of floating time ranges, drastically improving timeline stability across multi-shot sequences.
+
+### Full-Reference Programmatic Injection (Phase 2)
+- **Automated Summary Block**: The engine now dynamically scans generation intents and pre-loads the precise HuggingFace structure header (`summary:`) with tags like `[keyframe completion]` or `[audio reference]` based directly on the visual node's internal state.
+- **Retention & Preservation Analysis**: The prompt compiler now automatically generates the `retention_analysis` metadata block marking visual assets (`<Picture X>`) as `fully_preserved` and matching audio triggers without LLM hallucination.
+- **Dynamic Multimodal Budgeting**: Ref2VA and Omni-tasks are incredibly complex. The word budget bounds have been dramatically uncapped (350-500 words minimum) for tasks involving multi-tag usage to ensure high-fidelity scene orchestration.
+
+### Advanced Audio, Speaker Syncing & L2VA
+- **Audio-First Token Injection**: For the first time, when connecting audio directly to the `H3_Promptor`, the prompt compiles a dedicated `<Audio N>` referencing token in the `subject_definitions` mapping. The LLM now perfectly syncs physical actions to sound.
+- **Stable Dialogue IDs `(Sx)`**: Embedded conversational logic into the prompt pipeline to enforce tight `(S1)`, `(S2)` character speaker ID mapping and clear voiceover tagging.
+- **Introducing L2VA (Last Frame Inference)**: Unlocked the highly requested `Last-Frame-to-Video-Audio (L2VA)` task type. Users can now provide a single ending frame, and the `H3_Promptor` will instruct the LLM to choreograph a dynamic, forward-moving narrative that mathematically converges exactly onto the target pose at the very last second of the generation.
+
+---
+## V1.1.0 (2026/08/07)
 
 ### Infinite Dynamic Sockets (ComfyAPI v3 Autogrow)
 - **Limitless scaling**: Refactored the `H3_Vision_Analyzer` to completely utilize ComfyUI's native API v3 `Autogrow` inputs. The rigid 4-image limit is gone. Users can now infinitely chain as many `<Picture>` and `<Video>` references as their ComfyUI can handle without cluttering the screen with unused ports.
