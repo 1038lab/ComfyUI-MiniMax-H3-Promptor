@@ -1,29 +1,62 @@
 {
-  "version": "1.0.0",
+  "version": "1.2.0",
   "providers": {
-    "openai": {
+    "prov_1720000001": {
+      "name": "openai",
+      "type": "openai",
       "api_base": "https://api.openai.com/v1",
       "api_key": "",
-      "default_model": "gpt-4o"
+      "model": "gpt-5",
+      "enabled": true,
+      "batch_vision": true
     },
-    "ollama": {
-      "api_base": "http://localhost:11434",
-      "default_model": "llama3.1"
-    },
-    "gemini": {
-      "api_base": "https://generativelanguage.googleapis.com/v1beta",
-      "api_key": "",
-      "default_model": "gemini-2.5-flash"
-    },
-    "claude": {
+    "prov_1720000002": {
+      "name": "anthropic",
+      "type": "anthropic",
       "api_base": "https://api.anthropic.com/v1",
       "api_key": "",
-      "default_model": "claude-3-5-sonnet-20241022"
+      "model": "claude-3-5-sonnet-latest",
+      "enabled": false,
+      "batch_vision": true
+    },
+    "prov_1720000003": {
+      "name": "gemini",
+      "type": "gemini",
+      "api_base": "https://generativelanguage.googleapis.com/v1beta",
+      "api_key": "",
+      "model": "gemini-2.5-flash",
+      "enabled": false,
+      "batch_vision": true
+    },
+    "prov_1720000004": {
+      "name": "ollama",
+      "type": "ollama",
+      "api_base": "http://localhost:11434",
+      "model": "llama3.2",
+      "enabled": true,
+      "batch_vision": false
+    },
+    "prov_1720000005": {
+      "name": "llamacpp",
+      "type": "openai",
+      "api_base": "http://localhost:8080/v1",
+      "api_key": "sk-dummy",
+      "model": "local-model",
+      "enabled": false,
+      "batch_vision": false
+    },
+    "prov_1720000006": {
+      "name": "lmstudio",
+      "type": "openai",
+      "api_base": "http://localhost:1234/v1",
+      "api_key": "sk-dummy",
+      "model": "local-model",
+      "enabled": false,
+      "batch_vision": false
     }
   },
   "defaults": {
-    "provider": "openai",
-    "temperature": 0.7,
-    "max_tokens": 4096
+    "vision_provider": "prov_1720000001",
+    "promptor_provider": "prov_1720000001"
   }
 }

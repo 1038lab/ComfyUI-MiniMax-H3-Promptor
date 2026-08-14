@@ -106,3 +106,15 @@ Welcome to the official advanced workflows guide! The H3-Promptor operates on a 
    - **Crucial Step:** On the Promptor node, manually set the `reference_images` dropdown to **6**.
 2. **MiniMax AIO Node:** Connect all 6 images via an Image Batch to the sampler.
 **Why this works:** The Promptor will strictly respect your manual **6** override. It will automatically generate the structural binding tags (`<Picture 1>` through `<Picture 6>`) so the MiniMax API knows exactly how many references to fetch for the video, despite the VLM only having detailed readouts for the first two!
+
+---
+
+## ⏪ 9. The Reverse Narrative (Last Frame Inference / L2VA)
+**Goal:** You have a specific ending frame (e.g., a person falling into water) and you want the AI to dream up the cinematic sequence that logically led up to that exact moment.
+**Node Setup:**
+1. **Vision Analyzer:** Connect the Ending Image to `image_ref_1`.
+2. **H3 Promptor:** 
+   - **Task Type:** Manually select `Last-Frame-to-Video-Audio (L2VA)`. *(Do not leave on Auto).*
+   - **Description:** *"A person falling backward into a swimming pool. The sequence starts with them slipping on the wet tile, struggling to balance, and finally falling."*
+3. **MiniMax AIO Node:** Connect the SAME Image to the image input.
+**Why this works:** Rather than treating your single image as Shot 1, the L2VA structural engine instructs the LLM to reverse-engineer a narrative. It chronologicaly builds up the timeline, ensuring that the *absolute last second* of the video locks perfectly onto the exact pose established by the image you provided.
