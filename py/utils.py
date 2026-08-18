@@ -44,19 +44,7 @@ def log_warning(msg: str):
 # ---------------------------------------------------------------------------
 
 def tensor_to_base64(tensor, max_frames: int = 4) -> list[str]:
-    """
-    Convert a ComfyUI IMAGE tensor to a list of base64-encoded PNG strings.
 
-    ComfyUI IMAGE tensors have shape [Batch, Height, Width, Channels]
-    with float32 values in [0, 1]. For videos, Batch > 1.
-
-    Args:
-        tensor: PyTorch tensor of shape [B, H, W, C] or [H, W, C].
-        max_frames: Max frames to extract (e.g., from a video).
-
-    Returns:
-        List of Base64-encoded PNG strings.
-    """
     from PIL import Image
 
     # Handle Comfy API v3 VideoFromFile object wrappers
@@ -96,19 +84,16 @@ def tensor_to_base64(tensor, max_frames: int = 4) -> list[str]:
 # ---------------------------------------------------------------------------
 
 def sanitize_llm_output(text: str) -> str:
-    """
-    Remove common LLM output artifacts from generated prompts.
-
-    Strips:
-    - Markdown code fences (```text ... ```)
-    - JSON wrappers
-    - Leading/trailing whitespace
-    - Common LLM preambles like "Here is the prompt:"
-    """
     if not text:
         return ""
 
     result = text.strip()
+
+    # Remove reasoning / think blocks from reasoning models (e.g. Qwen / DeepSeek R1)
+    think_pattern = re.compile(r"<think>.*?</think>", re.DOTALL | re.IGNORECASE)
+    cleaned_think = think_pattern.sub("", result).strip()
+    if cleaned_think:
+        result = cleaned_think
 
     # Remove markdown code fences
     # Match ```text ... ``` or ```json ... ``` or ``` ... ```

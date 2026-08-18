@@ -1,80 +1,79 @@
 """
-ComfyUI-Minimax-H3-Promptor
-This custom node for ComfyUI provides automation suite for generating MiniMax H3 prompts.
+ComfyUI-Minimax-H3-Promptor V1.3.0
+Vision Analyzer Node (V2)
 
-This integration script follows GPL-3.0 License.
-When using or modifying this code, please respect both the original model licenses
-and this integration's license terms.
-
-Source: https://github.com/1038lab/ComfyUI-Minimax-H3-Promptor
+Handles UI media uploads directly (no image/video input ports), outputs parsed vision context,
+and passes raw media files to reference output ports.
 """
-
+import os
 import json
 from pathlib import Path
+from PIL import Image
+import torch
+import numpy as np
 
+import folder_paths
 import comfy.model_management as model_management
 from comfy_api.latest import io
 
 from .config_manager import get_config_manager
-from .utils import log_info, log_error, tensor_to_base64, _create_provider
+from .utils import log_info, log_error, _create_provider
 
+# Load vision prompts json
+curr_dir = os.path.dirname(os.path.realpath(__file__))
+root_dir = os.path.dirname(curr_dir)
+with open(os.path.join(root_dir, 'vision_prompts.json'), 'r', encoding='utf-8') as f:
+    PRESETS = json.load(f)
 
-PRESETS_FILE = Path(__file__).parent.parent / "vision_prompts.json"
-
-DEFAULT_PRESETS = {
-    "image_prompts": {
-        "Subject / Identity": "Focus exclusively on describing the main subject's appearance, facial features, and clothing.",
-        "Comprehensive": "Analyze the entire image in extreme detail (subjects, environment, lighting, composition, mood).",
-        "Action / Emotion": "Analyze only the physical actions, body language, posture, and facial expressions of the subject.",
-        "Face & Expression Focus": "Analyze the facial features, gaze, and micro-expressions intimately.",
-        "Prop & Object Interaction": "Focus purely on what objects the subject is holding or interacting with, and how they interact.",
-        "Lighting & Camera": "Describe only the camera angle/framing (e.g., close-up, wide shot) and the ambient lighting setup.",
-        "Cinematic Composition": "Analyze framing techniques, depth of field, foreground/background separation, and lens characteristics (wide, telephoto, macro).",
-        "Style & Aesthetics": "Focus solely on the artistic style, color palette, texture, and overall mood.",
-        "Color Palette & Texture": "Focus exclusively on the dominating colors, contrast ratios, and visual textures present."
-    },
-    "video_prompts": {
-        "Motion Focus": "Focus strictly on the choreography, speed, and physical movement executed by the subject.",
-        "Comprehensive": "Analyze the sequential pacing, camera movement, and subject motion across all provided keyframes.",
-        "Camera Tracking": "Focus entirely on tracking how the virtual camera moves (panning, zooming, dollying, tracking).",
-        "Temporal Flow": "Analyze the overall pacing, transitions, and scene progression across the extracted frames.",
-        "Physics & Momentum": "Analyze the realistic physics, gravity, weight, and momentum of the moving subjects/objects.",
-        "Background Dynamics": "Focus exclusively on what is moving in the environment or background, ignoring the main subject."
-    }
-}
-
-def load_vision_presets():
-    """Load vision presets from JSON or create default if missing."""
-    if not PRESETS_FILE.exists():
-        try:
-            with open(PRESETS_FILE, "w", encoding="utf-8") as f:
-                json.dump(DEFAULT_PRESETS, f, indent=4, ensure_ascii=False)
-            return DEFAULT_PRESETS
-        except Exception:
-            return DEFAULT_PRESETS
+IMAGE_MODES = list(PRESETS.get('image_prompts', {}).keys())
+VIDEO_MODES = list(PRESETS.get('video_prompts', {}).keys())
+def get_file_path(filename: str, type: str = "input", subfolder: str = "") -> str:
+    """Resolve file path using comfyui's folder paths logic."""
+    if type == "input":
+        base_dir = folder_paths.get_input_directory()
+    elif type == "output":
+         base_dir = folder_paths.get_output_directory()
+    elif type == "temp":
+         base_dir = folder_paths.get_temp_directory()
+    else:
+        # Default fallback
+        base_dir = folder_paths.get_input_directory()
     
-    try:
-        with open(PRESETS_FILE, "r", encoding="utf-8") as f:
-            return json.load(f)
-    except Exception as e:
-        log_error(f"Failed to load vision_prompts.json: {e}")
-        return DEFAULT_PRESETS
+    if subfolder:
+        return os.path.join(base_dir, subfolder, filename)
+    return os.path.join(base_dir, filename)
 
-PRESETS = load_vision_presets()
-IMAGE_MODES = list(PRESETS.get("image_prompts", DEFAULT_PRESETS["image_prompts"]).keys())
-VIDEO_MODES = list(PRESETS.get("video_prompts", DEFAULT_PRESETS["video_prompts"]).keys())
-
-
-from .config_manager import get_config_manager
+def video_path_to_tensor(video_path: str, max_frames: int = 4) -> torch.Tensor:
+    import cv2
+    cap = cv2.VideoCapture(video_path)
+    frames = []
+    total_frames = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
+    if total_frames > max_frames:
+        indices = np.linspace(0, total_frames - 1, max_frames, dtype=int)
+    else:
+        indices = np.arange(total_frames)
+        
+    for idx in indices:
+        cap.set(cv2.CAP_PROP_POS_FRAMES, idx)
+        ret, frame = cap.read()
+        if ret:
+            frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+            frames.append(frame)
+    cap.release()
+    
+    if len(frames) == 0:
+        raise ValueError(f"Failed to read any frames from video: {video_path}")
+        
+    frames_np = np.stack(frames).astype(np.float32) / 255.0
+    return torch.from_numpy(frames_np)
 
 class H3_Vision_Analyzer(io.ComfyNode):
     """
-    MiniMax H3 Vision Analyzer
-    
-    Extracts text descriptions and analysis from input references
-    using targeted user prompts via JSON preset dropdowns.
+    Minimax H3 Vision Analyzer
+    Provides explicit configuration and exact original-ratio Media outputs.
     """
-
+    OUTPUT_IS_LIST = (False, True)
+    
     @classmethod
     def define_schema(cls):
         try:
@@ -99,44 +98,36 @@ class H3_Vision_Analyzer(io.ComfyNode):
             if not active_providers:
                 active_providers = ["No Provider Configured"]
                 default_choice = active_providers[0]
-            
-            if default_choice in active_providers:
-                active_providers.remove(default_choice)
-                active_providers.insert(0, default_choice)
                 
-
         except Exception:
             active_providers = ["Error Loading Providers"]
             default_choice = active_providers[0]
 
         return io.Schema(
             node_id="H3_Vision_Analyzer",
-            display_name="MiniMax H3 Vision Analyzer",
+            display_name="MiniMax H3 Vision Analyzer", # UI Name replacing older one conceptually
             category="🧪AILab/🎬 MiniMax H3-Promptor",
             inputs=[
+                # Top section Configuration
                 io.Combo.Input("global_image_mode", options=IMAGE_MODES, default="Subject / Identity"),
                 io.Combo.Input("global_video_mode", options=VIDEO_MODES, default="Comprehensive"),
-                io.String.Input("custom_prompt_override", multiline=True, default="", tooltip="Line-by-line override. Example: <Picture 2>: Overwrite prompt here", optional=True),
-                
-                io.Autogrow.Input("ref_images", optional=True,
-                                  template=io.Autogrow.TemplatePrefix(
-                                      input=io.Image.Input("image", tooltip="Reference image"),
-                                      prefix="image_", min=0, max=9)),
-                io.Autogrow.Input("ref_videos", optional=True,
-                                  template=io.Autogrow.TemplatePrefix(
-                                      input=getattr(io, "Video", getattr(io, "AnyType", io.Image)).Input("video", tooltip="Reference video"),
-                                      prefix="video_", min=0, max=3)),
-
-                io.Combo.Input("output_language", options=["English", "Chinese"], default="English", tooltip="Language for the analysis output.", optional=True),
                 io.Combo.Input("provider", options=active_providers, default=default_choice, tooltip="Vision LLM provider to use for analysis.", optional=True),
                 io.Float.Input("temperature", default=0.2, min=0.0, max=1.0, step=0.05, optional=True),
                 io.Int.Input("max_tokens", default=2048, min=256, max=8192, step=256, optional=True),
+                io.Combo.Input("output_language", options=["English", "Chinese"], default="English", tooltip="Language for the analysis output.", optional=True),
+                
+                # Hidden state containing the JSON of what files are uploaded via frontend
+                io.String.Input("_media_state", default="", extra_dict={"hidden": True}),
+                
+                # Custom prompt override containing tags
+                io.String.Input("custom_prompt_override", multiline=True, default="", tooltip="Line-by-line override. Example: <Picture 2>: Overwrite prompt here", optional=True),
             ],
             outputs=[
-                io.String.Output("vision_context", display_name="vision_context")
+                io.String.Output("vision_context", display_name="vision_context"),
+                io.Image.Output("ref_images", display_name="ref_images"),
             ],
         )
-
+    
     @classmethod
     def execute(
         cls,
@@ -147,34 +138,101 @@ class H3_Vision_Analyzer(io.ComfyNode):
         custom_prompt_override: str = "",
         temperature: float = 0.2,
         max_tokens: int = 2048,
-        ref_images: io.Autogrow.Type = None,
-        ref_videos: io.Autogrow.Type = None,
+        _media_state: str = "{}"
     ) -> io.NodeOutput:
         try:
             from .response_parser import ResponseParser
             from .prompt_builder import PromptBuilder
             from .vision_orchestrator import VisionOrchestrator
-
-            # 1. Resolve provider + config
+            
+            # --- 1. Parse media state ---
+            try:
+                media_data = json.loads(_media_state if _media_state else "{}")
+            except Exception:
+                media_data = {"media": []}
+            
+            media_list = media_data.get("media", [])
+            
+            parsed_images_for_vlm = []
+            parsed_videos_for_vlm = []
+            parsed_video_paths = []
+            parsed_audios_for_vlm = []
+            
+            for entry in media_list:
+                # [slot_name, {name: "path...", kind: "image"}]
+                if len(entry) >= 2:
+                    slot_name, data = entry[0], entry[1]
+                    file_name = data.get("name", "")
+                    kind = data.get("kind", "")
+                    
+                    if not file_name:
+                        continue
+                    
+                    # Split path
+                    parts = file_name.split('/')
+                    filename = parts[-1]
+                    subfolder = '/'.join(parts[:-1]) if len(parts) > 1 else ""
+                    
+                    full_path = get_file_path(filename, "input", subfolder)
+                    
+                    if not os.path.exists(full_path):
+                        log_error(f"Media file not found: {full_path}")
+                        continue
+                        
+                    if kind == "image":
+                        try:
+                            i = Image.open(full_path)
+                            from PIL import ImageOps
+                            i = ImageOps.exif_transpose(i)
+                            pil_img = i.convert("RGB")
+                            
+                            # Save untouched original tensor for VLM and outputs
+                            orig_array = np.array(pil_img).astype(np.float32) / 255.0
+                            orig_tensor = torch.from_numpy(orig_array)[None,]
+                            parsed_images_for_vlm.append(orig_tensor)
+                        except Exception as e:
+                            log_error(f"Failed to load image {full_path}: {e}")
+                            
+                    elif kind == "video":
+                        try:
+                            video_tensor = video_path_to_tensor(full_path, 4)
+                            parsed_videos_for_vlm.append(video_tensor)
+                            parsed_video_paths.append(full_path)
+                        except Exception as e:
+                            log_error(f"Failed to load video {full_path}: {e}")
+                            
+                    elif kind == "audio":
+                        parsed_audios_for_vlm.append(full_path)
+            
+            # For output port:
+            # Bypass `torch.cat()` and output raw list for native ComfyUI List Expansion (no deformation).
+            out_images = parsed_images_for_vlm if parsed_images_for_vlm else None
+                
+            # --- 3. Run LLM Vision Analysis ---
             config_manager = get_config_manager()
             provider_key = config_manager.find_provider_by_display_name(provider)
             provider_config = config_manager.get_provider_config(provider_key)
             llm = _create_provider(provider_key, config_manager)
-            batch_vision = provider_config.get("batch_vision", True)
+            
+            # Backwards compat mapping
+            batch_size = provider_config.get("batch_size")
+            if batch_size is None:
+                # If they still have boolean legacy value
+                if provider_config.get("batch_vision") is False:
+                    batch_size = 1
+                else:
+                    batch_size = 4
 
-            # VRAM management (Ollama only)
             if provider_key == "ollama":
                 log_info("Unloading local Vision model from VRAM...")
                 model_management.unload_all_models()
                 model_management.soft_empty_cache()
 
-            # 2. Build prompts via PromptBuilder
             prompt_builder = PromptBuilder()
             system_prompt = prompt_builder.build_vision_system_prompt(output_language)
             vibe_system_prompt = prompt_builder.build_vibe_system_prompt()
             overrides = PromptBuilder.parse_overrides(custom_prompt_override)
 
-            # 3. Dispatch all media through orchestrator
             orchestrator = VisionOrchestrator(
                 llm=llm,
                 prompt_builder=prompt_builder,
@@ -185,26 +243,39 @@ class H3_Vision_Analyzer(io.ComfyNode):
                 max_tokens=max_tokens,
                 model_override=llm.model,
             )
+            
+            ref_images_dict = {}
+            for i, tensor in enumerate(parsed_images_for_vlm):
+                ref_images_dict[f"image_{i}"] = tensor
+                
+            ref_videos_dict = {}
+            for i, path in enumerate(parsed_videos_for_vlm):
+                ref_videos_dict[f"video_{i}"] = path
+                
+            ref_audios_dict = {}
+            for i, path in enumerate(parsed_audios_for_vlm):
+                ref_audios_dict[f"audio_{i}"] = path
+                
             final_dict, media_keys = orchestrator.analyze_all(
-                ref_images=ref_images,
-                ref_videos=ref_videos,
+                ref_images=ref_images_dict if len(ref_images_dict) > 0 else None,
+                ref_videos=ref_videos_dict if len(ref_videos_dict) > 0 else None,
+                ref_audios=ref_audios_dict if len(ref_audios_dict) > 0 else None,
                 presets=PRESETS,
                 overrides=overrides,
                 global_image_mode=global_image_mode,
                 global_video_mode=global_video_mode,
                 output_language=output_language,
-                batch_vision=batch_vision,
+                batch_size=batch_size,
                 provider_label=provider_key,
             )
 
             if not final_dict:
-                return io.NodeOutput("{}")
+                return io.NodeOutput("{}", out_images)
 
-            # 4. Serialize + return
             final_dict["_media_keys"] = media_keys
             final_output = json.dumps(final_dict, indent=4, ensure_ascii=False)
 
-            # Console dump for debug
+            # Debug
             print(f"\n{'-'*20} RAW ANALYZER OUTPUT {'-'*20}")
             print(final_output)
             print(f"{'-'*60}\n")
@@ -213,17 +284,19 @@ class H3_Vision_Analyzer(io.ComfyNode):
                 log_info("Re-clearing VRAM after VLM execution to free space for H3...")
                 model_management.soft_empty_cache()
 
-            return io.NodeOutput(final_output)
+            return io.NodeOutput(
+                final_output, 
+                out_images
+            )
 
         except Exception as e:
             log_error(str(e))
-            return io.NodeOutput(f"[Analyzer Exception]: {str(e)}")
-
+            return io.NodeOutput(f"[Analyzer Exception]: {str(e)}", None)
 
 NODE_CLASS_MAPPINGS = {
     "H3_Vision_Analyzer": H3_Vision_Analyzer,
 }
 
 NODE_DISPLAY_NAME_MAPPINGS = {
-    "H3_Vision_Analyzer": "MiniMax H3 Vision Analyzer",
+    "H3_Vision_Analyzer": "MiniMax H3 Vision Analyzer"
 }

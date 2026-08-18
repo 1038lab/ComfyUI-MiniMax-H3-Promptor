@@ -263,6 +263,13 @@ class VisionOrchestrator:
         output_language, provider_label, final_dict,
     ):
         """Text-only synthesis call for the Global Vibe summary."""
+        # If all visual media analyses failed with API errors, do not call LLM to hallucinate vibe from error text
+        visual_entries = [v for k, v in final_dict.items() if not k.startswith("<Audio")]
+        if visual_entries and all(str(v).startswith("API Error:") for v in visual_entries):
+            log_error("Skipping Global Vibe synthesis because all visual media analyses failed with API errors.")
+            final_dict["Global_Vibe"] = "Visual analysis failed for attached media (API Error)."
+            return
+
         vibe_prompt_en = overrides.get("Global_Vibe", self._get_prompt_str(presets, global_image_mode))
         vibe_message = self.pb.build_vibe_request(output_language, final_dict, vibe_prompt_en)
 

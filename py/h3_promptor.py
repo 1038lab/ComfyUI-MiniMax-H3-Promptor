@@ -204,7 +204,7 @@ class H3_Promptor:
             if not response.success:
                 error_msg = f"[H3-Promptor Error] {response.error}"
                 log_error(response.error)
-                return (error_msg, f"Error: {detected_type}")
+                return (error_msg,)
                 
             # Log raw response to console for user debugging
             print(f"\n{'-'*20} RAW PROMPTOR OUTPUT {'-'*20}")
