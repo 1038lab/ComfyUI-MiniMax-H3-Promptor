@@ -51,18 +51,17 @@ class VisionOrchestrator:
 
     # ------------------------------------------------------------------
     # Public entry point
-    # ------------------------------------------------------------------
-
     def analyze_all(
         self,
         ref_images,
         ref_videos,
+        ref_audios,
         presets: dict,
         overrides: dict,
         global_image_mode: str,
         global_video_mode: str,
         output_language: str,
-        batch_vision: bool,
+        batch_size: int,
         provider_label: str,
     ) -> tuple[dict, list]:
         """
@@ -70,12 +69,12 @@ class VisionOrchestrator:
 
         Parameters
         ----------
-        ref_images / ref_videos : ComfyUI Autogrow inputs (dict | list | None)
+        ref_images / ref_videos / ref_audios : ComfyUI Autogrow inputs (dict | list | None)
         presets : loaded vision_prompts.json dict
         overrides : per-key prompt overrides from PromptBuilder.parse_overrides()
         global_image_mode / global_video_mode : preset keys selected in the UI
         output_language : "English" | "Chinese"
-        batch_vision : True = single API call for all images; False = one per image
+        batch_size : Numeric limit for maximum images per API call (1 = sequential)
         provider_label : display label for log messages
         """
         media_keys: list[str] = []
@@ -86,9 +85,9 @@ class VisionOrchestrator:
 
         # 1. Process images
         if img_list:
-            if batch_vision:
+            if batch_size > 1:
                 self._process_images_batch(
-                    img_list, presets, overrides, global_image_mode,
+                    img_list, batch_size, presets, overrides, global_image_mode,
                     output_language, provider_label, media_keys, final_dict,
                 )
             else:
@@ -104,7 +103,17 @@ class VisionOrchestrator:
                 output_language, provider_label, media_keys, final_dict,
             )
 
-        # 3. Global Vibe synthesis (text-only summarisation)
+        # 3. Process audios (dummy registration)
+        aud_iterable = [aud for aud in _get_iterable(ref_audios) if aud is not None]
+        if aud_iterable:
+            aud_index = 1
+            for aud in aud_iterable:
+                target_key = f"<Audio {aud_index}>"
+                media_keys.append(target_key)
+                final_dict[target_key] = "[Audio file identified. LLM analysis not supported.]"
+                aud_index += 1
+
+        # 4. Global Vibe synthesis (text-only summarisation)
         if final_dict:
             self._process_vibe(
                 presets, overrides, global_image_mode,
@@ -135,44 +144,52 @@ class VisionOrchestrator:
     # -- Image: Batch --------------------------------------------------
 
     def _process_images_batch(
-        self, img_list, presets, overrides, global_image_mode,
+        self, img_list, batch_size, presets, overrides, global_image_mode,
         output_language, provider_label, media_keys, final_dict,
     ):
-        """Send all images to the LLM in a single interleaved request."""
-        chunk_keys = []
-        instructions = []
-        all_frames = []
-
+        """Send images in batch, chunking into requests of max batch_size images to respect API limits."""
+        CHUNK_SIZE = batch_size
+        sub_batches = [img_list[i:i + CHUNK_SIZE] for i in range(0, len(img_list), CHUNK_SIZE)]
+        
         img_index = 1
-        pos = 1
-        for img in img_list:
-            target_key = f"<Picture {img_index}>"
-            media_keys.append(target_key)
-            chunk_keys.append(target_key)
-            frames = tensor_to_base64(img, max_frames=1)
-            active_prompt = overrides.get(target_key, self._get_prompt_str(presets, global_image_mode))
-            instructions.append(
-                self.pb.build_vision_request(output_language, target_key, active_prompt, pos=pos)
-            )
-            all_frames.extend(frames)
-            img_index += 1
-            pos += 1
+        for batch_idx, sub_batch in enumerate(sub_batches):
+            chunk_keys = []
+            instructions = []
+            all_frames = []
+            pos = 1
 
-        mega_prompt = "Order of attached media:\n" + "\n".join(instructions)
-        payload = [{"text": mega_prompt}]
-        for f in all_frames:
-            payload.append({"image": f})
+            for img in sub_batch:
+                target_key = f"<Picture {img_index}>"
+                media_keys.append(target_key)
+                chunk_keys.append(target_key)
+                
+                frames = tensor_to_base64(img, max_frames=1)
+                active_prompt = overrides.get(target_key, self._get_prompt_str(presets, global_image_mode))
+                
+                instructions.append(
+                    self.pb.build_vision_request(output_language, target_key, active_prompt, pos=pos)
+                )
+                all_frames.extend(frames)
+                img_index += 1
+                pos += 1
 
-        log_info(f"Analyzer calling {provider_label} for ALL IMAGES ({len(chunk_keys)} items) in BATCH mode...")
-        response = self._call_llm(self.system_prompt, "", payload)
+            mega_prompt = "Order of attached media:\n" + "\n".join(instructions)
+            payload = [{"text": mega_prompt}]
+            for f in all_frames:
+                payload.append({"image": f})
 
-        if response.success:
-            parsed = self.parser.parse_vision_response(response.content, chunk_keys)
-            final_dict.update(parsed)
-        else:
-            log_error(f"API Error in Image Batch: {response.error}")
-            for key in chunk_keys:
-                final_dict[key] = f"API Error: {response.error}"
+            chunk_label = f"(Chunk {batch_idx+1}/{len(sub_batches)}: {len(chunk_keys)} items)" if len(sub_batches) > 1 else f"({len(chunk_keys)} items)"
+            log_info(f"Analyzer calling {provider_label} for IMAGES {chunk_label} in BATCH mode...")
+            
+            response = self._call_llm(self.system_prompt, "", payload)
+
+            if response.success:
+                parsed = self.parser.parse_vision_response(response.content, chunk_keys)
+                final_dict.update(parsed)
+            else:
+                log_error(f"API Error in Image Batch {batch_idx+1}: {response.error}")
+                for key in chunk_keys:
+                    final_dict[key] = f"API Error: {response.error}"
 
     # -- Image: Sequential ---------------------------------------------
 

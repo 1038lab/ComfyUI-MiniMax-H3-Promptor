@@ -46,7 +46,7 @@ class PromptBuilder:
                 # Base estimation: ~25 words per second
                 budget = int(duration * 25)
             
-            budget_str = f"Word Budget Constraint: Approximately {budget} English words. Prioritize action over fluff."
+            budget_str = f"Video Duration CONSTRAINT: EXACTLY {duration} seconds. DO NOT generate timestamps beyond {duration:02.3f}.\nWord Budget Constraint: Approximately {budget} English words. Prioritize action over fluff."
             parts.append(f"{base}\n\n{budget_str}")
         else:
             parts.append(self._fallback_base())
@@ -150,8 +150,7 @@ class PromptBuilder:
             
         msg += f"Primary Target User Description:\n{description}\n\n"
         
-        # Inject exact constraints
-        msg += f"Constraint: The video will be {duration} seconds long (approx. {int(duration * 24)} frames). Pace the [Shot N] descriptions accordingly.\n"
+        msg += f"Constraint: The video will be {duration} seconds long (approx. {int(duration * 24)} frames). Pace the [Shot N] descriptions accordingly, and NEVER generate timestamps beyond {duration:02.3f} seconds.\n"
         
         # Inject tagging requirements
         available_tags = []
