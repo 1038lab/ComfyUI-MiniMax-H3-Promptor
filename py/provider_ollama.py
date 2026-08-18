@@ -60,6 +60,8 @@ class OllamaProvider(LLMProvider):
             else:
                 user_payload["content"] = user_message
                 user_payload["images"] = base64_images
+        else:
+            user_payload["content"] = user_message
         # Ollama llama3.2-vision and llava models often crash with HTTP 500 if a 'system' role is used.
         # We must fold the system prompt into the user message.
         final_content = f"{system_prompt}\n\n{user_payload['content']}"
