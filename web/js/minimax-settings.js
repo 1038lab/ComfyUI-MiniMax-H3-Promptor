@@ -185,21 +185,23 @@ function createInput(type, currentVal, onChange) {
     return ipt;
 }
 
-async function performTestConnection({ type, api_base, api_key }, btnElement) {
+async function performTestConnection({ type, api_base, api_key, model }, btnElement) {
     btnElement.innerHTML = "<i class='pi pi-spin pi-spinner'></i> Testing...";
     try {
         const resp = await fetch("/minimax-h3/test_connection", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ type, api_base, api_key })
+            body: JSON.stringify({ type, api_base, api_key, model })
         });
         const res = await resp.json();
         if (res.status === "success") {
             btnElement.innerHTML = "<i class='pi pi-check'></i> OK";
             btnElement.style.color = "#4ade80";
+            btnElement.title = res.message || "Connection & Model Verified";
         } else {
             btnElement.innerHTML = "<i class='pi pi-times'></i> Fail";
             btnElement.style.color = "#f87171";
+            btnElement.title = res.message || "Connection Failed";
             alert(res.message);
         }
     } catch (e) {
@@ -209,6 +211,7 @@ async function performTestConnection({ type, api_base, api_key }, btnElement) {
     setTimeout(() => {
         btnElement.innerHTML = "<i class='pi pi-sort-alt'></i> Test";
         btnElement.style.color = "";
+        btnElement.title = "";
     }, 4000);
 }
 
@@ -255,13 +258,15 @@ function buildDefaultsCard(title, nodePrefix, config, container) {
         if (await saveConfig(config)) renderSettingsPanel(container, config);
     };
 
-    const provOptions = Object.keys(config.providers || {}).map(k => {
-        const pcfg = config.providers[k];
-        return {
-            value: k,
-            text: pcfg.name ? `${pcfg.name} (${pcfg.model || ''})` : k
-        };
-    });
+    const provOptions = Object.keys(config.providers || {})
+        .map(k => {
+            const pcfg = config.providers[k];
+            return {
+                value: k,
+                text: pcfg.name ? `${pcfg.name} (${pcfg.model || ''})` : k
+            };
+        })
+        .sort((a, b) => a.text.localeCompare(b.text));
 
     // Provider
     const groupProv = document.createElement("div");
@@ -336,7 +341,17 @@ function renderSettingsPanel(container, config) {
     provList.style.flexDirection = "column";
     provList.style.gap = "6px";
 
-    const providers = Object.keys(config.providers || {});
+    // Sort providers alphabetically by display name (or name + model)
+    const providers = Object.keys(config.providers || {}).sort((a, b) => {
+        const pA = config.providers[a] || {};
+        const pB = config.providers[b] || {};
+        const nameA = (pA.name || a).toLowerCase();
+        const nameB = (pB.name || b).toLowerCase();
+        const modelA = (pA.model || '').toLowerCase();
+        const modelB = (pB.model || '').toLowerCase();
+        return nameA.localeCompare(nameB) || modelA.localeCompare(modelB);
+    });
+
     providers.forEach(p => {
         const row = document.createElement("div");
         row.className = "minimax-provider-row";
@@ -374,7 +389,12 @@ function renderSettingsPanel(container, config) {
         const testBtn = document.createElement("button");
         testBtn.className = "minimax-btn";
         testBtn.innerHTML = "<i class='pi pi-sort-alt'></i> Test";
-        testBtn.onclick = () => performTestConnection({ type: data.type || 'openai', api_base: data.api_base, api_key: data.api_key }, testBtn);
+        testBtn.onclick = () => performTestConnection({
+            type: data.type || 'openai',
+            api_base: data.api_base,
+            api_key: data.api_key,
+            model: data.model || data.default_model || ''
+        }, testBtn);
 
         const editBtn = document.createElement("button");
         editBtn.className = "minimax-btn";
@@ -443,9 +463,15 @@ function renderEditor(parentCard, pName, pData, config, mainContainer, isNew = f
             <label>API Key</label>
             <input type="password" id="mm-f-key" value="${pData.api_key || ''}" placeholder="sk-..." />
         </div>
-        <div class="minimax-input-group" style="margin-top:8px;">
-            <label>Model</label>
-            <input type="text" id="mm-f-model" value="${pData.model || pData.default_model || ''}" placeholder="e.g. gpt-4" />
+        <div class="minimax-options-grid" style="margin-top:8px;">
+            <div class="minimax-input-group">
+                <label>Model</label>
+                <input type="text" id="mm-f-model" value="${pData.model || pData.default_model || ''}" placeholder="e.g. gpt-4" />
+            </div>
+            <div class="minimax-input-group" title="Max images sent per API call. 1 = Sequential mode. 4+ = Batch mode (ideal for APIs).">
+                <label>Max Batch Images</label>
+                <input type="number" id="mm-f-batch-size" value="${pData.batch_size !== undefined ? pData.batch_size : (pData.batch_vision === false ? 1 : 4)}" min="1" max="50" style="padding: 6px;" />
+            </div>
         </div>
         <div style="margin-top:12px; display:flex; align-items:center; gap:16px;">
             <div style="display:flex; align-items:center; gap:6px;">
@@ -455,23 +481,25 @@ function renderEditor(parentCard, pName, pData, config, mainContainer, isNew = f
                 </label>
                 <label style="margin:0; font-weight:bold; font-size:13px; color:var(--input-text);">Enabled</label>
             </div>
-            <div style="display:flex; align-items:center; gap:6px;" title="Send all images in one API call. Disable for small local models to avoid out-of-memory errors by processing images sequentially.">
-                <label class="minimax-toggle">
-                    <input type="checkbox" id="mm-f-batch" ${pData.batch_vision !== false ? 'checked' : ''} />
-                    <span class="minimax-toggle-slider"></span>
-                </label>
-                <label style="margin:0; font-weight:bold; font-size:13px; color:var(--input-text);">Batch Vision</label>
-            </div>
         </div>
         <div style="display:flex; justify-content:flex-end; gap:8px; margin-top: 12px;">
-            <button class="minimax-btn" id="mm-btn-cancel">Cancel</button>
-            <button class="minimax-btn primary" id="mm-btn-save"><i class='pi pi-save'></i> Save & Apply</button>
+            <button type="button" class="minimax-btn" id="mm-btn-test-edit"><i class='pi pi-sort-alt'></i> Test Connection</button>
+            <button type="button" class="minimax-btn" id="mm-btn-cancel">Cancel</button>
+            <button type="button" class="minimax-btn primary" id="mm-btn-save"><i class='pi pi-save'></i> Save & Apply</button>
         </div>
     `;
 
     parentCard.appendChild(form);
 
-
+    document.getElementById("mm-btn-test-edit").onclick = () => {
+        const testBtn = document.getElementById("mm-btn-test-edit");
+        performTestConnection({
+            type: document.getElementById("mm-f-type").value,
+            api_base: document.getElementById("mm-f-base").value.trim(),
+            api_key: document.getElementById("mm-f-key").value.trim(),
+            model: document.getElementById("mm-f-model").value.trim()
+        }, testBtn);
+    };
 
     document.getElementById("mm-btn-cancel").onclick = () => form.remove();
     document.getElementById("mm-btn-save").onclick = async () => {
@@ -491,7 +519,7 @@ function renderEditor(parentCard, pName, pData, config, mainContainer, isNew = f
             api_key: document.getElementById("mm-f-key").value.trim(),
             model: document.getElementById("mm-f-model").value.trim(),
             enabled: document.getElementById("mm-f-enabled").checked,
-            batch_vision: document.getElementById("mm-f-batch").checked
+            batch_size: parseInt(document.getElementById("mm-f-batch-size").value, 10) || 4
         };
 
         if (await saveConfig(config)) {
