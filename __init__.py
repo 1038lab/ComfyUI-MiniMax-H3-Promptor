@@ -1,4 +1,4 @@
-__version__ = "1.2.0"
+__version__ = "1.3.0"
 
 from .py.h3_promptor import H3_Promptor
 from .py.h3_vision_analyzer import H3_Vision_Analyzer
