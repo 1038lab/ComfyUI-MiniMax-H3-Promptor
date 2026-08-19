@@ -120,13 +120,12 @@ class H3_Promptor:
         reference_audios: str = "Auto",
         output_language: str = "English",
         provider: str = "",
-        temperature: float = 0.2,
+        temperature: float = 0.7,
         max_tokens: int = 4096,
     ):
-        """Generate a MiniMax H3 structured prompt."""
+        """Generate a MiniMax H3 structured prompt using the two-stage director pipeline."""
         try:
             # Parse intelligent Auto media signature if present
-            # Convert UI string values back to integers, treating "Auto" as 0 internally for fallback
             ui_ref_images = 0 if reference_images == "Auto" else int(reference_images)
             ui_ref_videos = 0 if reference_videos == "Auto" else int(reference_videos)
             ui_ref_audios = 0 if reference_audios == "Auto" else int(reference_audios)
@@ -136,28 +135,28 @@ class H3_Promptor:
             has_audio = ui_ref_audios > 0
             
             parsed_vision_dict = None
+            available_tags = []
             if vision_context:
                 import json
                 try:
                     parsed_vision_dict = json.loads(vision_context)
-                    
-                    # Update media counts based on Dictionary keys
                     media_keys = parsed_vision_dict.get("_media_keys", [])
                     img_count = sum(1 for k in media_keys if k.startswith("<Picture"))
                     vid_count = sum(1 for k in media_keys if k.startswith("<Video"))
                     aud_count = sum(1 for k in media_keys if k.startswith("<Audio"))
                     
-                    # Automatically use the maximum value: allows partial vision analysis (e.g. 3 analyzed) 
-                    # while keeping remaining images (e.g. 6 total) as empty visual anchors for the H3 model
                     image_count = max(ui_ref_images, img_count)
                     has_video = (ui_ref_videos > 0) or (vid_count > 0)
                     has_audio = (ui_ref_audios > 0) or (aud_count > 0)
                         
-                    # Format vision context back into a readable string for the Prompt LLM context
                     formatted_context = []
-                    for k, v in parsed_vision_dict.items():
-                        if k != "_media_keys":
+                    for k in media_keys:
+                        v = parsed_vision_dict.get(k, "").strip()
+                        if v and "failed to analyze" not in v.lower():
                             formatted_context.append(f"{k}: {v}")
+                            available_tags.append(k)
+                    if has_video: available_tags.append("<Video 1>")
+                    if has_audio: available_tags.append("<Audio 1>")
                     vision_context = "\n".join(formatted_context)
                 
                 except json.JSONDecodeError:
@@ -170,66 +169,102 @@ class H3_Promptor:
                 has_audio=has_audio,
                 user_override=task_type
             )
+            task_desc = TaskDetector.get_task_description(detected_type)
             
-            log_info(f"Task type: {TaskDetector.get_task_description(detected_type)}")
-
-            # 4. Generate system and user prompts
-            system_prompt = self.prompt_builder.build_system_prompt(detected_type, duration=duration, output_language=output_language)
-            
-            user_message = self.prompt_builder.build_user_message(
-                description, duration, detected_type, vision_context=vision_context, output_language=output_language,
-                image_count=image_count, has_video=has_video
-            )
-
-            # 4. Get LLM provider
+            # 2. Get LLM provider
             config_manager = get_config_manager()
             provider_key = config_manager.find_provider_by_display_name(provider)
             llm = _create_provider(provider_key, config_manager)
 
-            log_info(
-                f"Calling {provider_key} | "
-                f"model={llm.model} | "
-                f"temp={temperature}"
+            print(f"\n" + "="*80)
+            print(f"🎬 [H3-PROMPTOR] STARTING TWO-STAGE DIRECTING PIPELINE")
+            print(f"• Task Mode: {detected_type} ({task_desc}) | Target Duration: {duration:0.1f}s | Lang: {output_language}")
+            print(f"• Provider: {provider_key} ({llm.model}) | Media: {image_count} Image(s), Video: {has_video}, Audio: {has_audio}")
+            print("="*80)
+
+            # ==========================================================
+            # STAGE 1: Blueprint & Global Vibe Planning
+            # ==========================================================
+            print(f"\n{'='*25} [STAGE 1/2] DIRECTING BLUEPRINT & GLOBAL VIBE {'='*25}")
+            stage1_sys = self.prompt_builder.build_blueprint_system_prompt(output_language=output_language)
+            stage1_user = self.prompt_builder.build_blueprint_user_message(
+                description=description,
+                duration=duration,
+                task_type=detected_type,
+                vision_context=vision_context,
+                output_language=output_language,
+                image_count=image_count,
+                has_video=has_video,
+                parsed_vision_dict=parsed_vision_dict
             )
 
-            # NOTE: We NO LONGER send images here (base64_images=None) because it's already in the text context.
-            response = llm.chat(
-                system_prompt=system_prompt,
-                user_message=user_message,
+            res_stage1 = llm.chat(
+                system_prompt=stage1_sys,
+                user_message=stage1_user,
+                base64_images=None,
+                temperature=temperature,
+                max_tokens=1024,
+            )
+
+            if not res_stage1.success:
+                err = f"[H3-Promptor Stage 1 Error] {res_stage1.error}"
+                log_error(err)
+                return (err,)
+
+            blueprint_text = res_stage1.content
+            print(blueprint_text)
+            print("="*80)
+
+            # ==========================================================
+            # STAGE 2: Cinematic Storyboard Generation
+            # ==========================================================
+            print(f"\n{'='*25} [STAGE 2/2] CINEMATIC STORYBOARD & DIALOGUE {'='*25}")
+            stage2_sys = self.prompt_builder.build_system_prompt(detected_type, duration=duration, output_language=output_language)
+            stage2_user = self.prompt_builder.build_storyboard_user_message(
+                blueprint=blueprint_text,
+                description=description,
+                duration=duration,
+                task_type=detected_type,
+                output_language=output_language,
+                available_tags=available_tags
+            )
+
+            res_stage2 = llm.chat(
+                system_prompt=stage2_sys,
+                user_message=stage2_user,
                 base64_images=None,
                 temperature=temperature,
                 max_tokens=max_tokens,
             )
 
-            if not response.success:
-                error_msg = f"[H3-Promptor Error] {response.error}"
-                log_error(response.error)
-                return (error_msg,)
-                
-            # Log raw response to console for user debugging
-            print(f"\n{'-'*20} RAW PROMPTOR OUTPUT {'-'*20}")
-            print(response.content)
-            print(f"{'-'*60}\n")
+            if not res_stage2.success:
+                err = f"[H3-Promptor Stage 2 Error] {res_stage2.error}"
+                log_error(err)
+                return (err,)
 
-            # 6. Post-process
-            task_desc = TaskDetector.get_task_description(detected_type)
-            
-            # Dynamically compute subject definitions and alignment strings in Python
-            subject_defs = self.prompt_builder.generate_subject_definitions(image_count, has_video, has_audio, parsed_vision_dict=parsed_vision_dict)
+            print(res_stage2.content)
+            print("="*80)
+
+            # ==========================================================
+            # STAGE 3: Deterministic Post-Processing & Official Assembly
+            # ==========================================================
+            subject_defs, valid_tags = self.prompt_builder.generate_subject_definitions(
+                image_count, has_video=has_video, has_audio=has_audio, parsed_vision_dict=parsed_vision_dict
+            )
             alignment_inst = self.prompt_builder.generate_alignment_instruction(detected_type, duration, image_count)
-            
+
             cleaned_prompt = PostProcessor.clean(
-                response.content, 
+                res_stage2.content, 
                 detected_type, 
                 full_task_desc=task_desc,
                 subject_defs=subject_defs,
-                alignment_inst=alignment_inst
+                alignment_inst=alignment_inst,
+                duration=duration
             )
-            log_info(
-                f"Prompt generated: {len(cleaned_prompt)} chars | "
-                f"model={response.model} | "
-                f"tokens={response.usage.get('total_tokens', '?')}"
-            )
+
+            print(f"\n{'#'*25} [FINAL ASSEMBLED MINIMAX PROMPT] {'#'*25}")
+            print(cleaned_prompt)
+            print("#"*80 + "\n")
 
             return (cleaned_prompt,)
 

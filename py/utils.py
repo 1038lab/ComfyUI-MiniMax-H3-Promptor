@@ -89,34 +89,38 @@ def sanitize_llm_output(text: str) -> str:
 
     result = text.strip()
 
-    # Remove reasoning / think blocks from reasoning models (e.g. Qwen / DeepSeek R1)
-    think_pattern = re.compile(r"<think>.*?</think>", re.DOTALL | re.IGNORECASE)
-    cleaned_think = think_pattern.sub("", result).strip()
-    if cleaned_think:
-        result = cleaned_think
+    # 1. Remove complete <think>...</think> blocks from reasoning models
+    result = re.sub(r"<think>.*?</think>", "", result, flags=re.DOTALL | re.IGNORECASE).strip()
+    
+    # 1b. Remove unclosed <think>... if output was cut off or unfinished
+    if "<think>" in result.lower() and "</think>" not in result.lower():
+        result = re.sub(r"<think>.*", "", result, flags=re.DOTALL | re.IGNORECASE).strip()
 
-    # Remove markdown code fences
-    # Match ```text ... ``` or ```json ... ``` or ``` ... ```
-    fence_pattern = re.compile(
-        r"^```(?:text|json|plaintext|plain)?\s*\n(.*?)```\s*$",
-        re.DOTALL,
+    # 2. Remove "Thinking Process:" or "Thought:" reasoning blocks at the start up to [Shot 1] or section headers
+    section_marker = re.search(
+        r"(?:^|\n)(\[Shot 1\]|subject_definitions:|integrated_multimodal_description:|detailed_description:|For the target video|How the reference)",
+        result,
+        re.IGNORECASE
     )
-    match = fence_pattern.match(result)
-    if match:
-        result = match.group(1).strip()
+    if section_marker and section_marker.start() > 0:
+        preamble = result[:section_marker.start()]
+        if any(term in preamble.lower() for term in ["thinking", "thought", "analyze", "drafting", "step 1", "step 2", "constraints", "1.", "2.", "*"]):
+            result = result[section_marker.start():].strip()
 
-    # Remove JSON wrapper if the entire output is {"prompt": "..."}
-    json_pattern = re.compile(
-        r'^\s*\{\s*"(?:prompt|output|result|text)"\s*:\s*"(.*?)"\s*\}\s*$',
-        re.DOTALL,
-    )
-    match = json_pattern.match(result)
-    if match:
-        result = match.group(1).strip()
-        # Unescape JSON string escapes
-        result = result.replace("\\n", "\n").replace('\\"', '"')
+    # 3. Remove markdown code fences
+    fence_match = re.search(r"^```(?:text|json|plaintext|plain|markdown)?\s*\n(.*?)\n```\s*$", result, re.DOTALL)
+    if fence_match:
+        result = fence_match.group(1).strip()
+    else:
+        result = re.sub(r"^```[\w]*\s*\n", "", result)
+        result = re.sub(r"\n```\s*$", "", result)
 
-    # Remove common LLM preambles
+    # 4. Remove JSON wrapper if output is {"prompt": "..."}
+    json_match = re.match(r'^\s*\{\s*"(?:prompt|output|result|text)"\s*:\s*"(.*?)"\s*\}\s*$', result, re.DOTALL)
+    if json_match:
+        result = json_match.group(1).strip().replace("\\n", "\n").replace('\\"', '"')
+
+    # 5. Remove common LLM preambles
     preambles = [
         r"^Here(?:'s| is) (?:the|your) (?:generated |rewritten |final )?(?:H3 )?prompt:?\s*\n",
         r"^(?:Sure|Okay|Of course)[!,.]?\s*(?:Here(?:'s| is).*?:)?\s*\n",

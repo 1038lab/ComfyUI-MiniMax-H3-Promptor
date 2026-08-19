@@ -5,6 +5,7 @@ This custom node for ComfyUI provides automation suite for generating MiniMax H3
 This integration script follows GPL-3.0 License.
 """
 
+import re
 from pathlib import Path
 from .utils import log_info, log_error, log_debug
 
@@ -38,16 +39,8 @@ class PromptBuilder:
 
         base = self._load_template("system_base.txt")
         if base:
-            # Inject budget based on duration and task type complexity
-            if task_type in ["Ref2VA", "I2VA", "V2VA", "V2V"]:
-                # Reference-heavy modes usually require 350-500 words
-                budget = max(350, int(duration * 30))
-            else:
-                # Base estimation: ~25 words per second
-                budget = int(duration * 25)
-            
-            budget_str = f"Video Duration CONSTRAINT: EXACTLY {duration} seconds. DO NOT generate timestamps beyond {duration:02.3f}.\nWord Budget Constraint: Approximately {budget} English words. Prioritize action over fluff."
-            parts.append(f"{base}\n\n{budget_str}")
+            duration_str = f"Video Duration: {duration} seconds. Ensure cut timestamps do not exceed {duration:02.3f}s. Pace the action naturally across the duration."
+            parts.append(f"{base}\n\n{duration_str}")
         else:
             parts.append(self._fallback_base())
 
@@ -71,61 +64,151 @@ class PromptBuilder:
         # Using the formula from minimax_plan.py
         s = "%.2f" % (int(round(max(0.0, float(duration)) * 10000)) // 100 / 100.0)
 
-        if task_type == "I2VA" and image_count >= 1:
+        if task_type in ["I2V", "I2VA"] and image_count >= 1:
             return "For the target video, at 0.00 seconds into the target video, <Picture 1> (from [Shot 1]) is fully referenced."
 
         if task_type == "L2VA" and image_count >= 1:
-            return f"For the target video, at {s} seconds into the target video, <Picture 1> is fully referenced."
+            return f"How the reference pictures align with the target video — <Picture 1> (from [Shot 1]) aligns with the {s}-second mark of the target video."
 
         if task_type != "FL2VA" or image_count < 2:
             return ""
         
         return (f"How the reference pictures align with the target video — <Picture 1> "
                 f"(from [Shot 1]) aligns with the 0.00-second mark of the target video; "
-                f"<Picture 2> (from [Shot 2]) aligns with the {s}-second mark of the target video.")
+                f"<Picture 2> (from [Shot 1]) aligns with the {s}-second mark of the target video.")
 
-    def generate_subject_definitions(self, image_count: int, has_video: bool, has_audio: bool = False, parsed_vision_dict: dict = None) -> str:
+    @staticmethod
+    def _detect_subject_noun(desc: str) -> str:
+        """Helper to accurately identify the natural noun/entity category using strict word boundaries."""
+        low = desc.lower()
+
+        # 1. Vehicles & Props (Checked first with word boundaries so 'performance' or 'driver' never match 'man')
+        vehicle_patterns = [
+            (r'\b(sports\s*car|supercar|race\s*car)\b', "sports car"),
+            (r'\b(taxi|cab)\b', "taxi"),
+            (r'\b(car|automobile|vehicle|sedan|coupe|suv|truck|van)\b', "vehicle"),
+            (r'\b(motorcycle|motorbike|bike|bicycle|scooter)\b', "motorcycle"),
+            (r'\b(airplane|plane|jet|aircraft|spaceship|shuttle)\b', "aircraft"),
+            (r'\b(boat|ship|yacht|vessel)\b', "vessel"),
+            (r'\b(robot|mech|cyborg|drone)\b', "robot"),
+            (r'\b(armor|suit\s+of\s+armor)\b', "armor"),
+        ]
+        for pat, noun in vehicle_patterns:
+            if re.search(pat, low):
+                return noun
+
+        # 2. Animals / Creatures (Word boundaries; negative lookahead prevents 'cat-ear' or 'tiger stripes' matching as animal)
+        animal_patterns = [
+            (r'\b(black\s+panther)\b', "black panther"),
+            (r'\b(panther|leopard|jaguar|cheetah)\b', "panther"),
+            (r'\b(tabby\s+cat)\b', "tabby cat"),
+            (r'\bcat\b(?!\s*[-_]?\s*(?:ear|tail|eye|print|suit|hat|mask))', "cat"),
+            (r'\btiger\b(?!\s*[-_]?\s*(?:stripe|print|pattern))', "tiger"),
+            (r'\blion\b(?!\s*[-_]?\s*(?:print|pattern))', "lion"),
+            (r'\b(dog|puppy|hound|wolf|fox|bear|dragon|horse|stallion|eagle|hawk|bird|rabbit|deer|creature|beast)\b', None),
+        ]
+        for pat, noun in animal_patterns:
+            m = re.search(pat, low)
+            if m:
+                return noun if noun else m.group(1)
+
+        # 3. Humanoid / Person (Strict word boundaries)
+        person_patterns = [
+            (r'\b(woman|girl|female|lady|she|her)\b', "young woman"),
+            (r'\b(boy|guy|young\s+man)\b', "young person"),
+            (r'\b(man|male|gentleman|he|his)\b', "man"),
+            (r'\b(warrior|knight|soldier|fighter|ninja|samurai)\b', "warrior"),
+            (r'\b(monk|wizard|mage|priest)\b', "character"),
+            (r'\b(person|individual|character|figure|human)\b', "character"),
+            (r'\b(hair|bikini|dress|skirt|suit|jacket|shirt|apron|wearing)\b', "young woman" if any(w in low for w in ["she", "her", "bikini", "dress", "skirt"]) else "character"),
+        ]
+        for pat, noun in person_patterns:
+            if re.search(pat, low):
+                return noun
+
+        # 4. Environment / Setting
+        env_patterns = [
+            (r'\b(tunnel|street|alley|corridor|room|hall|forest|mountain|beach|cityscape|landscape|temple|laboratory|station)\b', None)
+        ]
+        for pat, _ in env_patterns:
+            m = re.search(pat, low)
+            if m:
+                return f"{m.group(1)} environment"
+
+        return "subject"
+
+    def generate_subject_definitions(self, image_count: int, has_video: bool, has_audio: bool = False, parsed_vision_dict: dict = None) -> tuple[str, list[str]]:
         """
-        Programmatically generate exact MiniMax syntax for binding reference tokens.
+        Programmatically generate clean MiniMax subject definitions following official ref-en.txt standard:
+        '<Subject N> is the [noun] in <Picture N>, with [key features].'
         """
         lines = []
+        valid_tags = []
         if parsed_vision_dict:
+            valid_idx = 1
             for i in range(image_count):
                 key = f"<Picture {i+1}>"
-                desc = parsed_vision_dict.get(key, "")
-                if desc:
-                    lines.append(f"{key} is {desc}")
-                else:
-                    lines.append(f"{key} acts as a visual anchor.")
+                desc = parsed_vision_dict.get(key, "").strip()
+                if desc and "failed to analyze" not in desc.lower():
+                    subj_tag = f"<Subject {valid_idx}>"
+                    valid_tags.append(subj_tag)
+                    
+                    # Detect natural entity noun
+                    noun = self._detect_subject_noun(desc)
+
+                    # Clean all boilerplate prefixes
+                    cleaned = desc.strip()
+                    cleaned = re.sub(
+                        r'^(?:the\s+)?(?:main\s+)?(?:subject\s+(?:is|has)|character\s+(?:is|has)|image\s+(?:shows|depicts|presents)|picture\s+(?:shows|depicts|features)|there\s+is|a\s+photo\s+of|a\s+view\s+of|an\s+image\s+of)\s+',
+                        '',
+                        cleaned,
+                        flags=re.IGNORECASE
+                    )
+                    cleaned = re.sub(r'^(?:a\s+|an\s+|the\s+)', '', cleaned, flags=re.IGNORECASE).strip()
+                    
+                    # Clean duplicate noun phrases (e.g. "woman with...", "man with...")
+                    cleaned = re.sub(r'^(?:woman|man|person|character|girl|boy|individual|subject|animal|vehicle|car)\s+(?:with|wearing|holding|in|having|characterized\s+by)\s+', '', cleaned, flags=re.IGNORECASE).strip()
+                    cleaned = re.sub(r'\s+', ' ', cleaned).strip()
+                    
+                    # Extract concise key features
+                    clauses = re.split(r'[\.\;\n]', cleaned)
+                    traits = clauses[0].strip()
+                    if len(traits) < 50 and len(clauses) > 1 and clauses[1].strip():
+                        traits += ", " + clauses[1].strip()
+                    if len(traits) > 120:
+                        traits = traits[:120].rsplit(' ', 1)[0]
+                    traits = traits.rstrip(',.')
+                    
+                    lines.append(f"{subj_tag} is the {noun} in {key}, with {traits}.")
+                    valid_idx += 1
             if has_video:
-                key = "<Video 1>"
-                desc = parsed_vision_dict.get(key, "")
-                if desc:
-                    lines.append(f"{key} is the reference video: {desc}")
+                desc = parsed_vision_dict.get("<Video 1>", "").strip()
+                valid_tags.append("<Video 1>")
+                if desc and "failed to analyze" not in desc.lower():
+                    lines.append(f"<Video 1> is the source video in <Video 1>, with motion and camera rhythm: {desc}.")
                 else:
-                    lines.append(f"{key} is the reference video.")
+                    lines.append("<Video 1> is the source video for camera movement and temporal structure.")
             if has_audio:
-                key = "<Audio 1>"
-                desc = parsed_vision_dict.get(key, "")
-                if desc:
-                    lines.append(f"{key} is the reference audio: {desc}")
+                desc = parsed_vision_dict.get("<Audio 1>", "").strip()
+                valid_tags.append("<Audio 1>")
+                if desc and "failed to analyze" not in desc.lower():
+                    lines.append(f"<Audio 1> is the audio track in <Audio 1>, providing voice timbre and synchronization: {desc}.")
                 else:
-                    lines.append(f"{key} is the synchronization and sound reference.")
-            return " ".join(lines)
+                    lines.append("<Audio 1> is the reference audio track for voice timbre and synchronization.")
+            return "\n".join(lines), valid_tags
         else:
             if image_count > 0:
-                pictures = " and ".join(f"<Picture {i+1}>" for i in range(image_count))
-                lines.append(f"<Subject 1> is the primary focus shown in {pictures}.")
                 for i in range(image_count):
-                    lines.append(f"<Picture {i+1}> acts as a visual anchor.")
-            
+                    subj_tag = f"<Subject {i+1}>"
+                    valid_tags.append(subj_tag)
+                    lines.append(f"{subj_tag} is the subject in <Picture {i+1}>.")
             if has_video:
-                lines.append("<Video 1> is the reference video: follow its motion and camera work exactly.")
-
+                valid_tags.append("<Video 1>")
+                lines.append("<Video 1> supplies camera rhythm and motion language only.")
             if has_audio:
-                lines.append("<Audio 1> is the synchronization and sound reference.")
-            
-            return " ".join(lines)
+                valid_tags.append("<Audio 1>")
+                lines.append("<Audio 1> supplies voice identity and audio synchronization.")
+            return "\n".join(lines), valid_tags
 
     def build_user_message(
         self,
@@ -135,40 +218,107 @@ class PromptBuilder:
         vision_context: str = "",
         output_language: str = "English",
         image_count: int = 0,
-        has_video: bool = False
+        has_video: bool = False,
+        parsed_vision_dict: dict = None,
     ) -> str:
         """
-        Construct the main user instruction string dynamically based on the available inputs.
+        Construct the main user instruction string dynamically with strict duration-based shot budgeting.
         """
         if output_language.lower() == "chinese":
             msg = f"Task: Generate a MiniMax {task_type} prompt. You MUST write your final response (including the [Shot N] descriptions and audio details) entirely in **Simplified Chinese (简体中文)**.\n\n"
         else:
-            msg = f"Task: Generate a MiniMax {task_type} prompt.\n\n"
+            msg = f"Task: Generate a MiniMax {task_type} prompt in English.\n\n"
         
         if vision_context:
-            msg += f"--- VISION ANALYSIS ---\nHere is the detailed analysis of the referenced images and videos for this generation:\n{vision_context}\n-----------------------\n\n"
+            msg += f"--- PRODUCTION MEDIA REFERENCES (CAST & PROPS) ---\n{vision_context}\n----------------------------------------------------\n\n"
             
-        msg += f"Primary Target User Description:\n{description}\n\n"
+        msg += f"USER'S CORE CREATIVE MANDATE (HIGHEST PRIORITY):\n{description}\n-> You MUST direct the scene, cast, and visual action specifically around fulfilling this creative mandate!\n\n"
         
-        msg += f"Constraint: The video will be {duration} seconds long (approx. {int(duration * 24)} frames). Pace the [Shot N] descriptions accordingly, and NEVER generate timestamps beyond {duration:02.3f} seconds.\n"
+        # Shot budget guidance
+        if duration <= 6.0:
+            budget_directive = f"Target Video Duration: EXACTLY {duration}s. Shot Budget: 1 to 2 shots max (>=2.5s per shot). Stage multiple references together within the same frame using foreground/midground/background depth composition."
+        elif duration <= 10.0:
+            budget_directive = f"Target Video Duration: EXACTLY {duration}s. Shot Budget: 2 to 3 shots max (>=3.0s per shot). Build a compact dramatic scene with action-reaction momentum."
+        else:
+            budget_directive = f"Target Video Duration: EXACTLY {duration}s. Shot Budget: 3 to 4 shots max (>=3.5s per shot). Build a rich cinematic sequence with fluid transitions."
+
+        msg += f"DIRECTING DIRECTIVE:\n- {budget_directive}\n- Never generate timestamps beyond {duration:02.3f} seconds.\n\n"
         
-        # Inject tagging requirements
+        # Inject available media tags (filtering out failed items)
         available_tags = []
         for i in range(image_count):
-            available_tags.append(f"<Picture {i+1}>")
+            key = f"<Picture {i+1}>"
+            if parsed_vision_dict:
+                desc = parsed_vision_dict.get(key, "").strip()
+                if desc and "failed to analyze" in desc.lower():
+                    continue
+            available_tags.append(key)
         if has_video:
             available_tags.append("<Video 1>")
             
         if available_tags:
-            msg += f"CRITICAL: You have the following media references available: {', '.join(available_tags)}.\n"
+            msg += f"PRODUCTION CAST & ASSETS: Available media references: {', '.join(available_tags)}.\n"
             if output_language.lower() == "chinese":
-                msg += "You MUST physically insert these exact tags into your [Shot N] sentences to explicitly dictate which subject/motion appears in which shot. For example: `<Picture 1> 走入房间，采用 <Video 1> 的姿态`.\n"
+                msg += "You MUST weave these exact tags naturally into your [Shot N] action sentences to direct the ensemble. For example: `<Picture 1> 与 <Picture 2> 并肩伏击，随后跃上 <Picture 3>`.\n"
             else:
-                msg += "You MUST physically insert these exact tags into your [Shot N] sentences to explicitly dictate which subject/motion appears in which shot. For example: `<Picture 1> enters the room, adopting the posture shown in <Video 1>`.\n"
+                msg += "You MUST weave these exact tags naturally into your [Shot N] action sentences to direct the ensemble. For example: `<Picture 1> and <Picture 2> sprint alongside <Picture 3>`.\n"
         
         return msg
 
-    def build_vision_system_prompt(self, output_language: str) -> str:
+    def build_blueprint_system_prompt(self, output_language: str = "English") -> str:
+        """System prompt for Stage 1: Director's Global Vibe & Timeline Blueprint synthesis."""
+        lang_rule = "Simplified Chinese (简体中文)" if output_language.lower() == "chinese" else "English"
+        return f"""You are a master Hollywood Director, Showrunner, and Storyboard Planner.
+Your task is to analyze production visual assets and the user's creative vision to produce a high-impact 'Director Blueprint & Global Vibe'.
+
+OUTPUT STRUCTURE (Write in {lang_rule}):
+1. [Global Vibe & Visual Aesthetic]: 2-3 sentences defining the lighting, color grade, atmosphere, and cinematic world.
+2. [Ensemble Cast Roles & Dynamics]: How the available references connect, interact, and serve the user's primary story mandate.
+3. [Timeline Beats Plan (Mandatory Full Coverage 00:00.000 to end)]:
+   Break the duration into evenly paced shots (e.g. 15s = 4 shots, 5s = 2 shots). For each beat, specify:
+   - [Shot N (Start - End)]: Core action, participating references, camera movement, and emotional punchline.
+"""
+
+    def build_blueprint_user_message(
+        self,
+        description: str,
+        duration: float,
+        task_type: str,
+        vision_context: str = "",
+        output_language: str = "English",
+        image_count: int = 0,
+        has_video: bool = False,
+        parsed_vision_dict: dict = None,
+    ) -> str:
+        """Construct user message for Stage 1: Blueprint Synthesis."""
+        msg = f"Task: Construct the Director's Blueprint & Global Vibe for a {duration:0.1f}s MiniMax {task_type} sequence.\n\n"
+        if vision_context:
+            msg += f"--- PRODUCTION VISUAL REFERENCES ---\n{vision_context}\n------------------------------------\n\n"
+        msg += f"USER'S SUPREME CREATIVE MANDATE:\n{description}\n\n"
+        msg += f"TIMELINE CONSTRAINT: Total duration is EXACTLY {duration:0.1f} seconds. Plan beats that completely cover from 00:00.000 to {duration:02.3f} seconds with zero empty gaps.\n"
+        return msg
+
+    def build_storyboard_user_message(
+        self,
+        blueprint: str,
+        description: str,
+        duration: float,
+        task_type: str,
+        output_language: str = "English",
+        available_tags: list = None,
+    ) -> str:
+        """Construct user message for Stage 2: Storyboard Generation using the Stage 1 Blueprint."""
+        msg = f"--- APPROVED DIRECTOR BLUEPRINT & GLOBAL VIBE ---\n{blueprint}\n------------------------------------------------\n\n"
+        msg += f"USER'S CORE CREATIVE MANDATE:\n{description}\n\n"
+        msg += f"DIRECTING TASK: Transform the approved Blueprint above into the final cinematic MiniMax {task_type} storyboard.\n"
+        msg += f"CRITICAL RULES:\n"
+        msg += f"1. Write timed paragraphs for EVERY shot planned in the blueprint, covering the entire timeline up to {duration:02.3f}s.\n"
+        if available_tags:
+            msg += f"2. You MUST physically weave these available reference tags: {', '.join(available_tags)} into your action sentences.\n"
+        msg += f"3. End strictly with the Audio: and Music: lines.\n"
+        return msg
+
+    def build_vision_system_prompt(self, output_language: str = "English") -> str:
         """Assemble the system prompt for the vision analyzer."""
         if output_language.lower() == "chinese":
             lang_instruction = "\nCRITICAL: You MUST write your response and translated summaries in Simplified Chinese (简体中文)."

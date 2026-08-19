@@ -42,50 +42,74 @@ class ResponseParser:
     def parse_vision_response(content: str, target_keys: list[str]) -> dict:
         """
         Parse raw response and map it to target keys.
-        Handles unstructured text fallbacks and fuzzy key matching (e.g., 'Picture 1' -> '<Picture 1>').
+        Handles unstructured text fallbacks, single-item dicts, and fuzzy key matching.
         """
+        if not content or not content.strip():
+            return {k: "LLM returned empty response." for k in target_keys}
+
         parsed = ResponseParser.extract_json_content(content)
         return_dict = {}
 
-        if parsed:
-            # Check if LLM strictly followed instructions
-            all_keys_found = all(k in parsed for k in target_keys)
+        if parsed and isinstance(parsed, dict):
+            # 1. Exact match for all keys
+            if all(k in parsed for k in target_keys):
+                return {k: str(parsed[k]).strip() for k in target_keys}
             
-            if all_keys_found:
-                return_dict = {k: parsed[k] for k in target_keys}
-            else:
-                # Fuzzy matching for keys where tags might be stripped (e.g. 'Picture 1' instead of '<Picture 1>')
-                for target_key in target_keys:
-                    raw_key = target_key.replace("<", "").replace(">", "")
-                    if target_key in parsed:
-                        return_dict[target_key] = parsed[target_key]
-                    elif raw_key in parsed:
-                        return_dict[target_key] = parsed[raw_key]
-                    else:
-                        # Find any key that matches the substring
-                        matched = False
-                        for pk, pv in parsed.items():
-                            if raw_key.lower() in pk.lower():
-                                return_dict[target_key] = pv
-                                matched = True
-                                break
-                        if not matched:
-                            return_dict[target_key] = "LLM failed to analyze this item."
-                            
-            # Special case for Global Vibe failing to output exact key but returning dict
-            if len(target_keys) == 1 and target_keys[0] == "Global_Vibe":
-                if "Global_Vibe" not in parsed:
-                    # If it's a dict with one item, assume that's the summary
-                    if len(parsed) == 1:
-                        val = list(parsed.values())[0]
-                        return_dict["Global_Vibe"] = val
-                    else:
-                        return_dict["Global_Vibe"] = json.dumps(parsed, ensure_ascii=False)        
-        else:
-            # Fallback handling for pure text responses
+            # 2. Single target key requested (Sequential image analysis or Global Vibe)
             if len(target_keys) == 1:
-                # If there's only 1 target key (e.g., <Picture 1> or Global_Vibe), the whole raw text is likely the answer
-                return_dict[target_keys[0]] = content.strip()
+                target_key = target_keys[0]
+                raw_key = target_key.replace("<", "").replace(">", "").strip()
+                
+                # Check direct or stripped key match
+                if target_key in parsed:
+                    return {target_key: str(parsed[target_key]).strip()}
+                if raw_key in parsed:
+                    return {target_key: str(parsed[raw_key]).strip()}
+                
+                # Check case-insensitive key substring
+                for pk, pv in parsed.items():
+                    if raw_key.lower() in pk.lower() or pk.lower() in raw_key.lower():
+                        return {target_key: str(pv).strip()}
+                
+                # Check common generic keys from vision models (e.g. "description", "details", "caption")
+                for generic_k in ["description", "desc", "analysis", "caption", "detail", "content", "summary", "result", "text"]:
+                    for pk, pv in parsed.items():
+                        if generic_k in pk.lower() and str(pv).strip():
+                            return {target_key: str(pv).strip()}
+                
+                # If dict has single value or non-empty string value, take it
+                for pv in parsed.values():
+                    if isinstance(pv, str) and pv.strip():
+                        return {target_key: pv.strip()}
+                
+                return {target_key: json.dumps(parsed, ensure_ascii=False)}
+
+            # 3. Multi-key matching (Batch mode)
+            for target_key in target_keys:
+                raw_key = target_key.replace("<", "").replace(">", "").strip()
+                matched = False
+                
+                if target_key in parsed:
+                    return_dict[target_key] = str(parsed[target_key]).strip()
+                    matched = True
+                elif raw_key in parsed:
+                    return_dict[target_key] = str(parsed[raw_key]).strip()
+                    matched = True
+                else:
+                    for pk, pv in parsed.items():
+                        if raw_key.lower() in pk.lower():
+                            return_dict[target_key] = str(pv).strip()
+                            matched = True
+                            break
+                
+                if not matched:
+                    return_dict[target_key] = "LLM failed to analyze this item."
+
+            return return_dict
+        else:
+            # Fallback for plain text response (no JSON found)
+            if len(target_keys) == 1:
+                return {target_keys[0]: content.strip()}
             else:
                 for k in target_keys:
                     return_dict[k] = "LLM failed to return valid JSON."

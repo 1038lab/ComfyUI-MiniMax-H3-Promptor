@@ -113,13 +113,8 @@ class VisionOrchestrator:
                 final_dict[target_key] = "[Audio file identified. LLM analysis not supported.]"
                 aud_index += 1
 
-        # 4. Global Vibe synthesis (text-only summarisation)
-        if final_dict:
-            self._process_vibe(
-                presets, overrides, global_image_mode,
-                output_language, provider_label, final_dict,
-            )
-
+        # Embed media keys into final dict for downstream routing
+        final_dict["_media_keys"] = media_keys
         return final_dict, media_keys
 
     # ------------------------------------------------------------------
