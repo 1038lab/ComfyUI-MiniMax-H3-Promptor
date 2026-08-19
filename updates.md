@@ -13,7 +13,6 @@
 - **User Custom Prompt as Supreme Mandate**: When you provide a custom prompt or scene wish, the director engine prioritizes it as the highest creative mandate, choreographing all uploaded actors, vehicles, and props to execute your exact vision.
 - **Ensemble Spatial Staging & Continuity**: Multiple references are composed together across Foreground, Midground, and Background layers with smooth transitions (Match on Action, Eyeline Match, Whip Pan).
 - **Physical Shot Budgeting (4s-15s)**: Strict pacing rules prevent video flicker by allocating at least 2.5s-4.0s per shot.
-- 
 <img width="3313" height="1353" alt="image" src="https://github.com/user-attachments/assets/e5e3f608-bcc0-42b4-86fd-a6157115259a" />
 
 ### 🌟 All-New Vision Analyzer V2 & Seamless List Expansion
