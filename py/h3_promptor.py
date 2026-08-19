@@ -203,7 +203,7 @@ class H3_Promptor:
                 user_message=stage1_user,
                 base64_images=None,
                 temperature=temperature,
-                max_tokens=1024,
+                max_tokens=max_tokens,
             )
 
             if not res_stage1.success:

@@ -85,25 +85,40 @@ class ResponseParser:
                 return {target_key: json.dumps(parsed, ensure_ascii=False)}
 
             # 3. Multi-key matching (Batch mode)
+            unmatched_keys = []
+            used_parsed_keys = set()
+
             for target_key in target_keys:
                 raw_key = target_key.replace("<", "").replace(">", "").strip()
                 matched = False
                 
                 if target_key in parsed:
                     return_dict[target_key] = str(parsed[target_key]).strip()
+                    used_parsed_keys.add(target_key)
                     matched = True
                 elif raw_key in parsed:
                     return_dict[target_key] = str(parsed[raw_key]).strip()
+                    used_parsed_keys.add(raw_key)
                     matched = True
                 else:
                     for pk, pv in parsed.items():
-                        if raw_key.lower() in pk.lower():
+                        if pk not in used_parsed_keys and raw_key.lower() in pk.lower():
                             return_dict[target_key] = str(pv).strip()
+                            used_parsed_keys.add(pk)
                             matched = True
                             break
                 
                 if not matched:
-                    return_dict[target_key] = "LLM failed to analyze this item."
+                    unmatched_keys.append(target_key)
+
+            # Positional fallback for remaining unmatched keys (e.g. LLM numbered items 1..N instead of 5..6)
+            if unmatched_keys:
+                remaining_parsed = [v for k, v in parsed.items() if k not in used_parsed_keys and str(v).strip()]
+                for i, target_key in enumerate(unmatched_keys):
+                    if i < len(remaining_parsed):
+                        return_dict[target_key] = str(remaining_parsed[i]).strip()
+                    else:
+                        return_dict[target_key] = "LLM failed to analyze this item."
 
             return return_dict
         else:
