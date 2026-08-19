@@ -1,62 +1,19 @@
 {
-  "id": "84d65322-5b4c-471b-b050-62b4686338f4",
+  "id": "08988737-a544-4ab1-99fb-22d67b7c36e3",
   "revision": 0,
-  "last_node_id": 59,
-  "last_link_id": 80,
+  "last_node_id": 106,
+  "last_link_id": 140,
   "nodes": [
     {
-      "id": 57,
-      "type": "easy showAnything",
+      "id": 104,
+      "type": "H3_Vision_Analyzer",
       "pos": [
-        1117.8234706193502,
-        4830.663142051234
+        -610.4692184720184,
+        -1160.2710490546688
       ],
       "size": [
-        571.3098023840539,
-        873.1671774022316
-      ],
-      "flags": {},
-      "order": 7,
-      "mode": 0,
-      "inputs": [
-        {
-          "name": "anything",
-          "shape": 7,
-          "type": "*",
-          "link": 79
-        }
-      ],
-      "outputs": [
-        {
-          "name": "output",
-          "type": "*",
-          "links": []
-        }
-      ],
-      "properties": {
-        "cnr_id": "comfyui-easy-use",
-        "ver": "595e0738a9e3f8d0d9c4d875461b2d2c9e7559c7",
-        "Node name for S&R": "easy showAnything",
-        "ue_properties": {
-          "widget_ue_connectable": {},
-          "input_ue_unconnectable": {},
-          "version": "7.8"
-        }
-      },
-      "widgets_values": [
-        "[REFERENCE USE]\nImage1 defines the woman's face, hair color, skin texture, and micro-expression only. Ignore its background, wardrobe, and framing.\nImage3 defines the woman's white veil, flowing white robe with deep V-neckline, ornate gold belt with pink tassels, and the pink cherry blossom environment only. Ignore its background subject and lighting.\nImage4 defines the urban night setting, low-angle crosswalk perspective, towering cityscape, neon signs with Japanese characters, teal sky, and pale full moon only. Ignore its original subject.\nImage2 defines the Coca-Cola 12 oz aluminum can as a prop only. Ignore its standalone context.\n\n[IDENTITY / CONTINUITY LOCKS]\nKeep exactly one woman. Preserve her face identity from Image1 throughout. Preserve her white veil, flowing white robe, gold belt, and teal hair. The Coca-Cola can remains the same prop in her hand. No identity drift, no wardrobe changes, no face swaps.\n\n[SCENE]\nA surreal cinematic moment at midnight. A young woman stands in the center of an empty crosswalk beneath towering skyscrapers. Pink cherry blossoms drift through the neon-lit night air. She holds a cold Coca-Cola can, looking up at the pale full moon hanging in the teal sky. The scene moves from still contemplation to a quiet, almost spiritual acknowledgment as she raises the can slightly toward the moonlight.\n\n[DIALOGUE]\nThe woman says in a soft, ethereal whisper, barely audible over the night ambience: \"Even the moon knows how to shine.\"\n\n[SCREEN GEOGRAPHY]\nThe woman stands centered in the frame on the crosswalk's yellow stripes. The towering buildings rise vertically on both sides, framing her. The full moon hangs in the upper center of the teal sky. Cherry blossom branches overhang from the top frame edges. The Coca-Cola can is held at chest level in her hands.\n\n[SHOT LIST]\n0–2s — Low-angle wide shot from ground level; the yellow crosswalk stripes lead the eye upward toward the woman centered in frame; she stands perfectly still, the white veil catching a soft halo from the moonlight above; cherry blossoms drift slowly past her shoulders; the camera begins a very slow push in.\n2–4s — The camera continues its slow push in, transitioning to a medium-low shot; the woman's face comes into focus, her large dark eyes reflecting the moon; a few petals land on her veil; she raises the Coca-Cola can slightly, the red aluminum catching neon reflections.\n4–5s — Hold on medium shot; she looks directly toward the moon with a faint, contemplative smile; her lips part to deliver the whispered line; the camera remains steady; petals continue to fall around her as the teal sky and full moon glow softly behind.\n\n[ACTING]\nThe woman remains mostly still with only subtle, deliberate movements. Her expression is serene and slightly melancholic. When she raises the can, the motion is slow and intentional. Her lip movement matches the whispered dialogue precisely. Her eyes hold a quiet depth, reflecting moonlight and neon.\n\n[LIGHT AND IMAGE]\nTeal and magenta color palette. The pale full moon provides a soft overhead rim light creating a halo around the veil. Neon signs cast colored reflections on the wet asphalt and the Coca-Cola can. Ethereal, dreamlike quality with deep shadows in the urban canyon. The white robe and veil glow subtly against the dark city backdrop. Shallow focus on the woman with the cityscape slightly softened behind her.\n\n[CAMERA]\nLow-angle composition throughout, emphasizing verticality. The camera pushes in slowly and smoothly from wide to medium-low, with small amplitude at slow speed. No handheld movement. No cuts. The push is continuous and motivated by the woman's subtle emotional shift.\n\n[PRODUCTION SOUND]\nAmbient: distant city hum, faint traffic far below, a soft night wind carrying petals. Effects: gentle rustle of fabric, the metallic whisper of the can being slightly lifted, a soft clink as petals touch the aluminum. Dialogue: the woman's whispered line is intimate and close, barely above breath. No music.\n\n[NEGATIVES]\nNo extra people. No face or identity drift. No wardrobe changes. No broken eyelines. No subtitles. No unmotivated cuts. No unwanted music. No distorted Coca-Cola branding. No unnatural petal density."
-      ]
-    },
-    {
-      "id": 46,
-      "type": "AILab_LoadImageSimple",
-      "pos": [
-        -848.3631543603117,
-        4830.663142051234
-      ],
-      "size": [
-        312.14246142871207,
-        435.06953165909545
+        509.2332438499885,
+        743.5300734193042
       ],
       "flags": {},
       "order": 0,
@@ -64,32 +21,22 @@
       "inputs": [],
       "outputs": [
         {
-          "name": "IMAGE",
-          "type": "IMAGE",
+          "name": "vision_context",
+          "type": "STRING",
           "links": [
-            74
+            137
           ]
         },
         {
-          "name": "MASK",
-          "type": "MASK",
-          "links": null
-        },
-        {
-          "name": "WIDTH",
-          "type": "INT",
-          "links": null
-        },
-        {
-          "name": "HEIGHT",
-          "type": "INT",
-          "links": null
+          "name": "ref_images",
+          "type": "IMAGE",
+          "links": [
+            138
+          ]
         }
       ],
       "properties": {
-        "cnr_id": "comfyui-rmbg",
-        "ver": "a1ca256ce5ef3d2d990935415bad76c4269aa80d",
-        "Node name for S&R": "AILab_LoadImageSimple",
+        "Node name for S&R": "H3_Vision_Analyzer",
         "ue_properties": {
           "widget_ue_connectable": {},
           "input_ue_unconnectable": {},
@@ -97,249 +44,93 @@
         }
       },
       "widgets_values": [
+        "Subject / Identity",
+        "Comprehensive",
+        "{\"media\":[[\"slot_1\",{\"name\":\"00046-3837505280.jpg\",\"kind\":\"image\"}],[\"slot_2\",{\"name\":\"50ce0f7d4b445a059614f548d229a683.jpg\",\"kind\":\"image\"}],[\"slot_3\",{\"name\":\"00055-3038182537.jpg\",\"kind\":\"image\"}],[\"slot_4\",{\"name\":\"7738ebeb-1790-4f7c-adfe-9527c87c24da.jpg\",\"kind\":\"image\"}],[\"slot_5\",{\"name\":\"41748507.jpg\",\"kind\":\"image\"}],[\"slot_6\",{\"name\":\"41761932.jpg\",\"kind\":\"image\"}],[\"slot_7\",{\"name\":\"41890945.jpg\",\"kind\":\"image\"}],[\"slot_8\",{\"name\":\"41897492.jpg\",\"kind\":\"image\"}]]}",
+        "agnes-ai (agnes-2.5-flash)",
+        0.2,
+        2048,
+        "English",
         "",
-        "00046-3837505280.jpg",
-        "image"
+        ""
       ],
-      "color": "#2e3e57",
-      "bgcolor": "#4b5b73"
+      "widgets_values_named": {
+        "global_image_mode": "Subject / Identity",
+        "global_video_mode": "Comprehensive",
+        "_media_state": "{\"media\":[[\"slot_1\",{\"name\":\"00046-3837505280.jpg\",\"kind\":\"image\"}],[\"slot_2\",{\"name\":\"50ce0f7d4b445a059614f548d229a683.jpg\",\"kind\":\"image\"}],[\"slot_3\",{\"name\":\"00055-3038182537.jpg\",\"kind\":\"image\"}],[\"slot_4\",{\"name\":\"7738ebeb-1790-4f7c-adfe-9527c87c24da.jpg\",\"kind\":\"image\"}],[\"slot_5\",{\"name\":\"41748507.jpg\",\"kind\":\"image\"}],[\"slot_6\",{\"name\":\"41761932.jpg\",\"kind\":\"image\"}],[\"slot_7\",{\"name\":\"41890945.jpg\",\"kind\":\"image\"}],[\"slot_8\",{\"name\":\"41897492.jpg\",\"kind\":\"image\"}]]}",
+        "provider": "agnes-ai (agnes-2.5-flash)",
+        "temperature": 0.2,
+        "max_tokens": 2048,
+        "output_language": "English",
+        "custom_prompt_override": "",
+        "gh_vision_v2_panel": ""
+      },
+      "color": "#221f33ff",
+      "bgcolor": "#3b3850ff"
     },
     {
-      "id": 47,
-      "type": "AILab_LoadImageSimple",
+      "id": 92,
+      "type": "PreviewAny",
       "pos": [
-        -509.2700470625416,
-        4830.663142051234
+        -96.2946890838064,
+        -1160.2710490546688
       ],
       "size": [
-        312.14246142871207,
-        435.06953165909545
+        578.1181380913422,
+        737.20109371674
       ],
       "flags": {},
       "order": 1,
       "mode": 0,
-      "inputs": [],
-      "outputs": [
-        {
-          "name": "IMAGE",
-          "type": "IMAGE",
-          "links": [
-            75
-          ]
-        },
-        {
-          "name": "MASK",
-          "type": "MASK",
-          "links": null
-        },
-        {
-          "name": "WIDTH",
-          "type": "INT",
-          "links": null
-        },
-        {
-          "name": "HEIGHT",
-          "type": "INT",
-          "links": null
-        }
-      ],
-      "properties": {
-        "cnr_id": "comfyui-rmbg",
-        "ver": "a1ca256ce5ef3d2d990935415bad76c4269aa80d",
-        "Node name for S&R": "AILab_LoadImageSimple",
-        "ue_properties": {
-          "widget_ue_connectable": {},
-          "input_ue_unconnectable": {},
-          "version": "7.8"
-        }
-      },
-      "widgets_values": [
-        "",
-        "00067-3936268221.jpg",
-        "image"
-      ],
-      "color": "#2e3e57",
-      "bgcolor": "#4b5b73"
-    },
-    {
-      "id": 48,
-      "type": "AILab_LoadImageSimple",
-      "pos": [
-        -845.9095371806944,
-        5326.850849773829
-      ],
-      "size": [
-        312.14246142871207,
-        435.06953165909545
-      ],
-      "flags": {},
-      "order": 2,
-      "mode": 0,
-      "inputs": [],
-      "outputs": [
-        {
-          "name": "IMAGE",
-          "type": "IMAGE",
-          "links": [
-            76
-          ]
-        },
-        {
-          "name": "MASK",
-          "type": "MASK",
-          "links": null
-        },
-        {
-          "name": "WIDTH",
-          "type": "INT",
-          "links": null
-        },
-        {
-          "name": "HEIGHT",
-          "type": "INT",
-          "links": null
-        }
-      ],
-      "properties": {
-        "cnr_id": "comfyui-rmbg",
-        "ver": "a1ca256ce5ef3d2d990935415bad76c4269aa80d",
-        "Node name for S&R": "AILab_LoadImageSimple",
-        "ue_properties": {
-          "widget_ue_connectable": {},
-          "input_ue_unconnectable": {},
-          "version": "7.8"
-        }
-      },
-      "widgets_values": [
-        "",
-        "102686787.jpg",
-        "image"
-      ],
-      "color": "#2e3e57",
-      "bgcolor": "#4b5b73"
-    },
-    {
-      "id": 49,
-      "type": "AILab_LoadImageSimple",
-      "pos": [
-        -509.0691369128156,
-        5324.515293311371
-      ],
-      "size": [
-        312.14246142871207,
-        435.06953165909545
-      ],
-      "flags": {},
-      "order": 3,
-      "mode": 0,
-      "inputs": [],
-      "outputs": [
-        {
-          "name": "IMAGE",
-          "type": "IMAGE",
-          "links": [
-            77
-          ]
-        },
-        {
-          "name": "MASK",
-          "type": "MASK",
-          "links": null
-        },
-        {
-          "name": "WIDTH",
-          "type": "INT",
-          "links": null
-        },
-        {
-          "name": "HEIGHT",
-          "type": "INT",
-          "links": null
-        }
-      ],
-      "properties": {
-        "cnr_id": "comfyui-rmbg",
-        "ver": "a1ca256ce5ef3d2d990935415bad76c4269aa80d",
-        "Node name for S&R": "AILab_LoadImageSimple",
-        "ue_properties": {
-          "widget_ue_connectable": {},
-          "input_ue_unconnectable": {},
-          "version": "7.8"
-        }
-      },
-      "widgets_values": [
-        "",
-        "208206.jpg",
-        "image"
-      ],
-      "color": "#2e3e57",
-      "bgcolor": "#4b5b73"
-    },
-    {
-      "id": 53,
-      "type": "easy showAnything",
-      "pos": [
-        141.96179204178645,
-        4830.663142051234
-      ],
-      "size": [
-        521.9603868394479,
-        581.1823510401482
-      ],
-      "flags": {},
-      "order": 5,
-      "mode": 0,
       "inputs": [
         {
-          "name": "anything",
-          "shape": 7,
+          "name": "source",
           "type": "*",
-          "link": 80
+          "link": 137
         }
       ],
       "outputs": [
         {
-          "name": "output",
-          "type": "*",
+          "name": "STRING",
+          "type": "STRING",
           "links": [
-            78
+            139
           ]
         }
       ],
       "properties": {
-        "cnr_id": "comfyui-easy-use",
-        "ver": "595e0738a9e3f8d0d9c4d875461b2d2c9e7559c7",
-        "Node name for S&R": "easy showAnything",
+        "cnr_id": "comfy-core",
+        "ver": "0.33.2",
+        "Node name for S&R": "PreviewAny",
         "ue_properties": {
           "widget_ue_connectable": {},
           "input_ue_unconnectable": {},
           "version": "7.8"
         }
       },
-      "widgets_values": [
-        "[MEDIA_SIGNATURE: IMG1 IMG2 IMG3 IMG4]\nImage 1:\nThe subject possesses a striking, symmetrical face with porcelain-smooth skin. Her large, dark eyes are framed by long lashes and gaze directly and intensely at the viewer, conveying a sense of calm confidence mixed with a subtle vulnerability. Her eyebrows are finely arched, and her nose is small and straight. Her lips are full and painted a soft, natural pink, resting in a neutral, slightly relaxed position. The micro-expressions are minimal but effective; there is a faint, almost imperceptible softness around her mouth and a slight furrow in her brow that suggests a moment of quiet contemplation or focused attention. Her teal hair flows dynamically around her shoulders, framing her face and adding to the ethereal quality of her expression.\n\nImage 2:\nThe main subject is a standard 12 oz aluminum beverage can. Its appearance is defined by the iconic, vibrant red background that covers the majority of the surface. The central feature is the white, cursive \"Coca-Cola\" script logo, which is elegantly curved and prominent. A white \"Dynamic Ribbon Device\" swirls vertically along the right side, adding a sense of motion. The top and bottom rims are silver aluminum, reflecting light. On the lower left, a small white box displays nutritional information (\"140 calories\"), and the volume \"12 fl oz\" is printed near the bottom. There are no facial features or clothing, as the subject is an inanimate object.\n\nImage 3:\nThe image features a young woman with dark hair pulled back, wearing a sheer white veil that drapes over her head and shoulders. She is dressed in a flowing white robe with a deep V-neckline, cinched at the waist by an ornate gold belt with pink tassels. Her facial features are delicate and serene, with soft makeup and a gentle, melancholic expression. She is surrounded by vibrant pink cherry blossoms, with branches framing the top of the image and petals floating in the air. The lighting is ethereal and soft, creating a halo effect around her head and highlighting the translucency of her veil and clothing. The background is dark and indistinct, which makes the subject and the pink flowers pop. The composition is a medium shot, centered on the woman, creating a sense of intimacy and focus. The mood is dreamy, romantic, and spiritual, evoking a sense of peace and beauty.\n\nImage 4:\nThe framing is a low-angle shot, looking up at the central figure and the towering cityscape, emphasizing the height of the buildings and the vastness of the sky. The depth of field is deep, keeping both the foreground subject and the background buildings relatively sharp, though there is a slight atmospheric haze in the distance. The foreground is dominated by the yellow stripes of a crosswalk, which act as leading lines drawing the eye toward the subject and into the scene. The background features a dense urban canyon with tall, dark buildings, neon signs with Japanese characters, and a large, pale full moon hanging in the teal sky. The lens characteristics suggest a wide-angle lens, capturing the expansive street scene and the verticality of the architecture. The separation between the foreground (the woman and the street) and the background (the buildings and sky) is clear, creating a layered, cinematic composition."
-      ]
+      "widgets_values": [],
+      "widgets_values_named": {}
     },
     {
-      "id": 59,
+      "id": 106,
       "type": "H3_Promptor",
       "pos": [
-        690.8728247502924,
-        4830.663142051234
+        490.83187247927293,
+        -1160.2710490546688
       ],
       "size": [
         400,
         304
       ],
       "flags": {},
-      "order": 6,
+      "order": 3,
       "mode": 0,
       "inputs": [
         {
           "name": "vision_context",
           "shape": 7,
           "type": "STRING",
-          "link": 78
+          "link": 139
         }
       ],
       "outputs": [
@@ -347,173 +138,160 @@
           "name": "prompt",
           "type": "STRING",
           "links": [
-            79
+            140
           ]
         }
       ],
       "properties": {
+        "Node name for S&R": "H3_Promptor",
         "ue_properties": {
           "widget_ue_connectable": {},
-          "input_ue_unconnectable": {}
-        },
-        "Node name for S&R": "H3_Promptor"
+          "input_ue_unconnectable": {},
+          "version": "7.8"
+        }
       },
       "widgets_values": [
         "Auto",
         "",
-        5,
+        15,
         "Auto",
         "Auto",
         "Auto",
         "English",
-        "openai (gpt-5)",
+        "agnes-ai (agnes-2.5-flash)",
         0.7,
         4096
       ],
-      "color": "#323",
-      "bgcolor": "#535"
+      "widgets_values_named": {
+        "task_type": "Auto",
+        "description": "",
+        "duration": 15,
+        "reference_images": "Auto",
+        "reference_videos": "Auto",
+        "reference_audios": "Auto",
+        "output_language": "English",
+        "provider": "agnes-ai (agnes-2.5-flash)",
+        "temperature": 0.7,
+        "max_tokens": 4096
+      },
+      "color": "#221f33ff",
+      "bgcolor": "#3b3850ff"
     },
     {
-      "id": 58,
-      "type": "H3_Vision_Analyzer",
+      "id": 93,
+      "type": "AILab_ImagePreview",
       "pos": [
-        -170.17693976477153,
-        4830.663142051234
+        -95.39139791253064,
+        -378.9090549268673
       ],
       "size": [
-        285.1880859375,
-        378
+        976.640872041384,
+        518.9616699906198
+      ],
+      "flags": {},
+      "order": 2,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "image",
+          "type": "IMAGE",
+          "link": 138
+        }
+      ],
+      "outputs": [
+        {
+          "name": "IMAGE",
+          "type": "IMAGE",
+          "links": null
+        }
+      ],
+      "properties": {
+        "cnr_id": "comfyui-rmbg",
+        "ver": "a1ca256ce5ef3d2d990935415bad76c4269aa80d",
+        "Node name for S&R": "AILab_ImagePreview",
+        "ue_properties": {
+          "widget_ue_connectable": {},
+          "input_ue_unconnectable": {},
+          "version": "7.8"
+        }
+      },
+      "widgets_values": [],
+      "widgets_values_named": {},
+      "color": "#2e3e57",
+      "bgcolor": "#4b5b73"
+    },
+    {
+      "id": 96,
+      "type": "PreviewAny",
+      "pos": [
+        895.8035191628611,
+        -1160.2710490546688
+      ],
+      "size": [
+        804.8973537900986,
+        1297.7174779029815
       ],
       "flags": {},
       "order": 4,
       "mode": 0,
       "inputs": [
         {
-          "label": "image_0",
-          "name": "ref_images.image_0",
-          "shape": 7,
-          "type": "IMAGE",
-          "link": 74
-        },
-        {
-          "label": "image_1",
-          "name": "ref_images.image_1",
-          "shape": 7,
-          "type": "IMAGE",
-          "link": 75
-        },
-        {
-          "label": "image_2",
-          "name": "ref_images.image_2",
-          "shape": 7,
-          "type": "IMAGE",
-          "link": 76
-        },
-        {
-          "label": "image_3",
-          "name": "ref_images.image_3",
-          "shape": 7,
-          "type": "IMAGE",
-          "link": 77
-        },
-        {
-          "label": "image_4",
-          "name": "ref_images.image_4",
-          "shape": 7,
-          "type": "IMAGE",
-          "link": null
-        },
-        {
-          "label": "video_0",
-          "name": "ref_videos.video_0",
-          "shape": 7,
-          "type": "VIDEO",
-          "link": null
+          "name": "source",
+          "type": "*",
+          "link": 140
         }
       ],
       "outputs": [
         {
-          "name": "vision_context",
+          "name": "STRING",
           "type": "STRING",
-          "links": [
-            80
-          ]
+          "links": null
         }
       ],
       "properties": {
+        "cnr_id": "comfy-core",
+        "ver": "0.33.2",
+        "Node name for S&R": "PreviewAny",
         "ue_properties": {
           "widget_ue_connectable": {},
-          "input_ue_unconnectable": {}
-        },
-        "Node name for S&R": "H3_Vision_Analyzer"
+          "input_ue_unconnectable": {},
+          "version": "7.8"
+        }
       },
-      "widgets_values": [
-        "Subject / Identity",
-        "Comprehensive",
-        "",
-        "English",
-        "openai (gpt-5)",
-        0.2,
-        2048
-      ],
-      "color": "#323",
-      "bgcolor": "#535"
+      "widgets_values": [],
+      "widgets_values_named": {}
     }
   ],
   "links": [
     [
-      74,
-      46,
+      137,
+      104,
       0,
-      58,
+      92,
       0,
-      "IMAGE"
+      "STRING"
     ],
     [
-      75,
-      47,
-      0,
-      58,
+      138,
+      104,
       1,
+      93,
+      0,
       "IMAGE"
     ],
     [
-      76,
-      48,
+      139,
+      92,
       0,
-      58,
-      2,
-      "IMAGE"
-    ],
-    [
-      77,
-      49,
-      0,
-      58,
-      3,
-      "IMAGE"
-    ],
-    [
-      78,
-      53,
-      0,
-      59,
+      106,
       0,
       "STRING"
     ],
     [
-      79,
-      59,
+      140,
+      106,
       0,
-      57,
-      0,
-      "STRING"
-    ],
-    [
-      80,
-      58,
-      0,
-      53,
+      96,
       0,
       "STRING"
     ]
@@ -521,20 +299,20 @@
   "groups": [],
   "config": {},
   "extra": {
-    "ue_links": [],
-    "ds": {
-      "scale": 0.5445000000000109,
-      "offset": [
-        1221.4943548949839,
-        -4131.48358430913
-      ]
-    },
-    "links_added_by_ue": [],
-    "frontendVersion": "1.48.7",
+    "frontendVersion": "1.49.6",
     "VHS_latentpreview": false,
     "VHS_latentpreviewrate": 0,
     "VHS_MetadataImage": true,
-    "VHS_KeepIntermediate": true
+    "VHS_KeepIntermediate": true,
+    "ue_links": [],
+    "links_added_by_ue": [],
+    "ds": {
+      "scale": 1.0644734280027894,
+      "offset": [
+        726.6322279802076,
+        1303.7340251152775
+      ]
+    }
   },
   "version": 0.4
 }
