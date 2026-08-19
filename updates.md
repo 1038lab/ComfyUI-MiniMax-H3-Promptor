@@ -1,5 +1,34 @@
 # ComfyUI-Minimax-H3-Promptor Update Log
 
+## V1.3.0 (2026/08/18)
+
+### (Hollywood AI Director & Full-Reference Architecture)
+### 🎬 Major Highlight: The Two-Stage Hollywood AI Director & Screenwriter Engine
+- **Two-Stage Directing Pipeline**: Completely overhauled prompt generation from a rushed one-shot output into a rigorous two-stage film production workflow:
+  * **Stage 1: Director Blueprint & Global Vibe**: The LLM first acts as a Hollywood Showrunner, analyzing your reference cast and creative intent to establish the world atmosphere, lighting/color palette, character dynamics, and an evenly paced Timeline Beats Plan (e.g. 4 distinct beats for 15s).
+  * **Stage 2: Cinematic Storyboard & Dialogue**: Using the approved blueprint, the LLM crafts timed, cohesive shots covering the entire duration (up to 15.0s) without cutting off early.
+- **Official Character Dialogue Syntax (`<d>[Language] "..."</d>`)**: Full support for MiniMax H3's official voice acting format: `<Subject N> (SN) [emotion/action] says: <d>[Language] "Spoken dialogue here"</d>`.
+- **User Custom Prompt as Supreme Mandate**: When you provide a custom prompt or scene wish, the director engine prioritizes it as the highest creative mandate, choreographing all uploaded actors, vehicles, and props to execute your exact vision.
+- **Ensemble Spatial Staging & Continuity**: Multiple references are composed together across Foreground, Midground, and Background layers with smooth transitions (Match on Action, Eyeline Match, Whip Pan).
+- **Physical Shot Budgeting (4s-15s)**: Strict pacing rules prevent video flicker by allocating at least 2.5s-4.0s per shot.
+
+### 🌟 All-New Vision Analyzer V2 & Seamless List Expansion
+<img width="3313" height="1353" alt="image" src="https://github.com/user-attachments/assets/e5e3f608-bcc0-42b4-86fd-a6157115259a" />
+
+- **Pure Web DOM Drop-Zone Architecture**: Replaced clunky image/video PyTorch input slots with an intuitive in-node HTML/JS drag-and-drop panel. Drag and drop pictures, videos, and audios directly without wiring noodles.
+- **Zero-Deformation Native List Expansion (`OUTPUT_IS_LIST`)**: Passes pristine, 100% original-dimension images directly through a List Iteration pipeline. No more cropping, letterboxing, or stretched faces!
+- **Streamlined Pure Perception**: Vision analyzer focuses strictly on objective visual perception (outlines, colors, clothing, OCR text), eliminating redundant text synthesis calls and cutting API token consumption and latency by 50%.
+- **Dynamic Configuration Scaling**: Customize `Max Batch Images` in the settings menu to automatically slice large multi-image batches for strict APIs without manual code changes.
+
+### 🛡️ Robust Entity Classification & Shot-Mapped Retention
+- **Word-Boundary Regex Entity Detection**: Uses strict word boundaries and negative lookahead to eliminate false classifications (e.g. "tiger-striped bikini" or "cat-ear headband" are correctly identified as clothing/accessories on a person, not wild animals; "high-performance" never misclassifies as a man).
+- **Dynamic Shot Appearance Mapping**: Automatically scans generated storyboard text to map which subjects actually appear in which shots, building 100% compliant `retention_analysis` metadata.
+
+### 🖥️ Standalone WebUI Studio & ComfyUI Real-Time Console Trace
+- **Standalone WebUI Studio (`run_webui.bat`)**: A sleek, dark-mode browser studio running locally on port 7890. Test any Vision JSON, tweak 4-15s duration, switch providers, and preview results with zero ComfyUI overhead.
+- **Full Pipeline Logs & Blueprint Tabs**: WebUI tabs allow deep inspection of the Stage 1 Director Blueprint, the raw storyboard, and the full step-by-step pipeline execution logs.
+- **ComfyUI Dual Output Ports & Console Trace**: `H3_Promptor` node outputs both `prompt` and `director_blueprint`, and prints beautifully styled, phase-by-phase execution banners directly to the ComfyUI terminal console!
+
 ---
 ## V1.2.0 (2026/08/13)
 Release Notes: (Settings Hub & Core Architecture Overhaul)
