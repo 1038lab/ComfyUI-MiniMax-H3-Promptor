@@ -13,21 +13,26 @@
 - **User Custom Prompt as Supreme Mandate**: When you provide a custom prompt or scene wish, the director engine prioritizes it as the highest creative mandate, choreographing all uploaded actors, vehicles, and props to execute your exact vision.
 - **Ensemble Spatial Staging & Continuity**: Multiple references are composed together across Foreground, Midground, and Background layers with smooth transitions (Match on Action, Eyeline Match, Whip Pan).
 - **Physical Shot Budgeting (4s-15s)**: Strict pacing rules prevent video flicker by allocating at least 2.5s-4.0s per shot.
-
-### 🌟 All-New Vision Analyzer V2 & Seamless List Expansion
+- 
 <img width="3313" height="1353" alt="image" src="https://github.com/user-attachments/assets/e5e3f608-bcc0-42b4-86fd-a6157115259a" />
 
+### 🌟 All-New Vision Analyzer V2 & Seamless List Expansion
 - **Pure Web DOM Drop-Zone Architecture**: Replaced clunky image/video PyTorch input slots with an intuitive in-node HTML/JS drag-and-drop panel. Drag and drop pictures, videos, and audios directly without wiring noodles.
 - **Zero-Deformation Native List Expansion (`OUTPUT_IS_LIST`)**: Passes pristine, 100% original-dimension images directly through a List Iteration pipeline. No more cropping, letterboxing, or stretched faces!
 - **Streamlined Pure Perception**: Vision analyzer focuses strictly on objective visual perception (outlines, colors, clothing, OCR text), eliminating redundant text synthesis calls and cutting API token consumption and latency by 50%.
-- **Dynamic Configuration Scaling**: Customize `Max Batch Images` in the settings menu to automatically slice large multi-image batches for strict APIs without manual code changes.
 
-### 🛡️ Robust Entity Classification & Shot-Mapped Retention
-- **Word-Boundary Regex Entity Detection**: Uses strict word boundaries and negative lookahead to eliminate false classifications (e.g. "tiger-striped bikini" or "cat-ear headband" are correctly identified as clothing/accessories on a person, not wild animals; "high-performance" never misclassifies as a man).
+### ⚙️ Fine-Tuning & Pipeline Polish
+- **Alphabetical Provider & Model Sorting**: The Provider selection dropdowns across nodes are now automatically sorted alphabetically, and your configured default provider is prioritized at the top.
+- **Customizable `Max Batch Images` (Sub-Batch Chunking)**: Configure maximum image batch sizes (e.g. 4 images per request) in the Settings Panel to easily comply with strict upstream API request limits without workflow crashes.
+- **Batch Chunk Positional Fallback**: Added robust position-based fallback mapping in `ResponseParser`. Even if an upstream VLM re-numbers images starting from 1 in subsequent chunks, keys are mapped to `<Picture 5>`, `<Picture 6>`, etc., with 100% accuracy.
+- **Full Token Budgeting for Multi-Reference Scenes**: Removed internal Stage 1 token bottlenecks, dynamically channeling full `max_tokens` (up to 4096 / 8192) to support reasoning models (`agnes-2.5-flash`, etc.) with internal thinking chains when handling up to 9 references.
+- **Word-Boundary Regex Entity Detection**: Uses strict word boundaries `\b` and negative lookahead to eliminate false entity classifications (e.g. "tiger-striped bikini" or "cat-ear headband" are correctly tagged as clothing/accessories on a person, not wild animals; "high-performance" never misclassifies as a man).
 - **Dynamic Shot Appearance Mapping**: Automatically scans generated storyboard text to map which subjects actually appear in which shots, building 100% compliant `retention_analysis` metadata.
+- **Node Appearance & Theme Customization**: Refined sleek dark-theme palette styling for custom nodes (`appearance.js`).
 
-### 🖥️ Standalone WebUI Studio & ComfyUI Real-Time Console Trace
-- **ComfyUI Dual Output Ports & Console Trace**: `H3_Promptor` node outputs both `prompt` and `director_blueprint`, and prints beautifully styled, phase-by-phase execution banners directly to the ComfyUI terminal console!
+### 🖥️ ComfyUI Real-Time Console Trace
+- **Step-by-Step Terminal Execution**: `H3_Promptor` node outputs the final prompt cleanly while printing beautifully styled, phase-by-phase execution banners (Stage 1 Blueprint, Stage 2 Storyboard, Final Assembly) directly to the ComfyUI terminal console for complete transparency!
+
 
 ---
 ## V1.2.0 (2026/08/13)
