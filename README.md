@@ -6,6 +6,19 @@ This project provides a robust, decoupled architecture separating **multimodal v
 
 ![ComfyUI MiniMax H3-Promptor](example_workflows/MiniMax-H3-Promptor.jpg)
 
+## V1.3.0 (2026/08/18) 
+
+### (Hollywood AI Director & Full-Reference Architecture)
+
+*   **🎬 Two-Stage Hollywood AI Director & Screenwriter Engine**: Transforms prompt generation into an authentic film production workflow (Stage 1: Director Blueprint & Global Vibe -> Stage 2: Cinematic Storyboard & Dialogue), generating evenly paced 4-beat timelines covering up to 15.0s.
+*   **🗣️ Official MiniMax Dialogue & Voice Acting Syntax**: Native support for `<Subject N> (SN) [emotion] says: <d>[Language] "..."</d>` for vivid character voices and live acting.
+*   **👑 Custom Prompt as Supreme Mandate**: User creative wishes are prioritized as the highest directive, orchestrating all uploaded cast, vehicles, and props to execute your vision.
+*   **🖼️ All-New Vision Analyzer V2 Drop-Zone Panel**: Native HTML/JS drag-and-drop panel right on the node surface; original images pass through zero-deformation `OUTPUT_IS_LIST` list expansion.
+*   **⚙️ Pipeline Polish & Fine-Tuning**: Alphabetical provider sorting with smart default pinning, customizable `Max Batch Images` sub-batching, chunk positional fallback, and regex word-boundary entity recognition.
+
+👉 **[Read the full v1.3.0 Release Notes and Detailed Features here (updates.md)](updates.md#v130-20260818)**
+
+
 ## 🎉 What's New in V1.2.0 (Settings Hub & Core Architecture Overhaul)
 
 *   **Global Native Settings Panel**: Manage all LLM providers (including API Keys and Hot-Reload toggles) seamlessly via the native ComfyUI Gear Icon settings.
