@@ -3,6 +3,8 @@
 ## V1.3.0 (2026/08/18)
 
 ### (Hollywood AI Director & Full-Reference Architecture)
+![ComfyUI MiniMax H3-Promptor](example_workflows/MiniMax-H3-Promptor.jpg)
+
 ### 🎬 Major Highlight: The Two-Stage Hollywood AI Director & Screenwriter Engine
 - **Two-Stage Directing Pipeline**: Completely overhauled prompt generation from a rushed one-shot output into a rigorous two-stage film production workflow:
   * **Stage 1: Director Blueprint & Global Vibe**: The LLM first acts as a Hollywood Showrunner, analyzing your reference cast and creative intent to establish the world atmosphere, lighting/color palette, character dynamics, and an evenly paced Timeline Beats Plan (e.g. 4 distinct beats for 15s).
@@ -25,8 +27,6 @@
 - **Dynamic Shot Appearance Mapping**: Automatically scans generated storyboard text to map which subjects actually appear in which shots, building 100% compliant `retention_analysis` metadata.
 
 ### 🖥️ Standalone WebUI Studio & ComfyUI Real-Time Console Trace
-- **Standalone WebUI Studio (`run_webui.bat`)**: A sleek, dark-mode browser studio running locally on port 7890. Test any Vision JSON, tweak 4-15s duration, switch providers, and preview results with zero ComfyUI overhead.
-- **Full Pipeline Logs & Blueprint Tabs**: WebUI tabs allow deep inspection of the Stage 1 Director Blueprint, the raw storyboard, and the full step-by-step pipeline execution logs.
 - **ComfyUI Dual Output Ports & Console Trace**: `H3_Promptor` node outputs both `prompt` and `director_blueprint`, and prints beautifully styled, phase-by-phase execution banners directly to the ComfyUI terminal console!
 
 ---
