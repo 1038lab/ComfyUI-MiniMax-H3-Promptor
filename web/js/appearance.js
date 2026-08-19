@@ -1,7 +1,7 @@
 import { app } from "/scripts/app.js";
 
 const COLOR_THEMES = {
-    H3promptor: { nodeColor: "#2b4037ff", nodeBgColor: "#2b4037ff", width: 340 },
+    H3promptor: { nodeColor: "#221f33ff", nodeBgColor: "#3b3850ff" },
     H3Sampler: { nodeColor: "#2c3145ff", nodeBgColor: "#2c3145ff", width: 340 },
 };
 
