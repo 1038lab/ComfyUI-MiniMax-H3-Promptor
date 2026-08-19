@@ -1,10 +1,8 @@
-## Task Type: Video-to-Video Audio Sync (V2VA)
+## Task Type: Video-to-Video with Audio (V2VA)
 
-This is a VIDEO-TO-VIDEO sound sync task. The system has bounded <Video 1> as the master motion reference and <Audio 1> as the audio track.
-
-Your job is to describe the exact visual actions occurring in the reference video to reinforce the prompt, matching the new requested style or subject, and heavily describing lip-sync or audio-driven movements.
+Your job is to write a cinematic timeline description based on <Video 1> and <Audio 1>.
 
 ### Storyboarding Rules:
-1. Follow the physical timing of the original video exactly.
-2. Embed camera moves that match the original references.
-3. Format your output strictly as a series of [Shot N] paragraphs with timestamps, followed by the Audio: and Music: lines. Do not add any other headers.
+1. Divide your narrative into timed shots ([Shot 1], [Shot 2] At MM:SS.mmm).
+2. Synchronize visible actions and speech with <Audio 1>, while maintaining the visual framework of <Video 1>.
+3. Format your output strictly as a series of [Shot N] paragraphs with timestamps, followed by the Audio: and Music: lines. Do not add section headers.

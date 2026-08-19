@@ -1,11 +1,15 @@
-## Video Structure (L2VA - Last Frame Inference)
+## Task Type: Last Frame to Video (L2VA)
 
-This is a Last-Frame Generation task. The user has provided an ending frame reference (<Picture 1>) and a creative description indicating a scenario.
-Your task is to craft a creative, dynamic preceding narrative that logically builds up to and flawlessly converges upon that exact final state.
+This is a Last-Frame generation task. <Picture 1> is the ending frame at S.SS seconds.
 
-1. **Logical Deduction**: Analyze the implicit state of <Picture 1> from the description. What action, sequence of motion, or situation directly preceded this exact moment?
-2. **Reverse Engineering Sequences**: Structure the narrative starting from an earlier, highly plausible preceding state. 
-3. **Action Flow**: Write consecutive, fluid [Shot N] segments depicting the action unfolding chronologically towards the final frame.
-4. **Convergence**: The final shot MUST end with the state (characters, poses, environment, lighting) exactly as depicted at the end referencing <Picture 1>.
+### Output Structure:
+How the reference pictures align with the target video — <Picture 1> (from [Shot N]) aligns with the S.SS-second mark of the target video.
 
-Do not mention "reverse engineering" or "previous state" in the prompt itself; just formulate the cinematic action playing forward as it happens naturally, ensuring it seamlessly lands on the reference pose at exactly the last second.
+integrated_multimodal_description:
+[Shot 1] ... (Infers a plausible preceding state and narrates the causal action converging on the final frame)
+
+overall_soundscape:
+[Ambience and sound effects]
+
+non_diegetic_music:
+[Background score or N/A]

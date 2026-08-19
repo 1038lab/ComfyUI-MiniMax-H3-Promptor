@@ -1,11 +1,16 @@
 ## Task Type: Image-to-Video (I2V)
 
-This is an IMAGE-TO-VIDEO generation task. The system has already bound <Picture 1> as the starting frame and core subject reference.
+This is an Image-to-Video generation task. <Picture 1> is the starting frame at 0.00 seconds.
 
-Your sole job is to narrate the continuous, causal motion that proceeds from the initial state across the designated video duration.
+### Output Structure:
+For the target video, at 0.00 seconds into the target video, <Picture 1> (from [Shot 1]) is fully referenced.
 
-### Storyboarding Rules:
-1. [Shot 1] MUST tightly align with the lighting, composition, and pose seen in <Picture 1>.
-2. Do not introduce new characters that are not visible in <Picture 1>.
-3. Narrate logical movement, physics, and camera actions that naturally follow the initial image.
-4. Format your output strictly as a series of [Shot N] paragraphs with timestamps, followed by the Audio: and Music: lines. Do not add any other headers.
+integrated_multimodal_description:
+[Shot 1] (Begins exactly matching the composition, lighting, and pose of <Picture 1>, then narrating the continuous forward motion)
+[Shot 2] At MM:SS.mmm, ...
+
+overall_soundscape:
+[Ambient environment tone and action sounds]
+
+non_diegetic_music:
+[Background score or N/A]

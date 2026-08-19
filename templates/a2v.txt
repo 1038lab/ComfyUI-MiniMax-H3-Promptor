@@ -1,20 +1,14 @@
-## Task Type: Audio-to-Video (A2V)
+## Task Type: Audio-to-Video (A2V / Audio Synchronization)
 
-This is an AUDIO-TO-VIDEO generation task. NO IMAGE OR VIDEO is provided. ONLY AUDIO is provided as a reference.
+This is an Audio-to-Video generation task where <Audio 1> provides the primary dialogue, music, or beat timeline.
 
-### Structure Requirements
+### Output Structure:
+integrated_multimodal_description:
+[Shot 1] ... (Narrates visual actions strictly synchronizing with <Audio 1>)
+[Shot 2] At MM:SS.mmm, ...
 
-Required sections:
-- [REFERENCE USE] — Declare that the Audio dictates the flow, rhythm, or content of the scene.
-- [SCENE] — Describe the setting, characters, and narrative arc that fits the audio mood.
-- [SHOT LIST] — Timed visual coverage with camera and action, reacting to audio cues.
-- [ACTING] — Performance direction reacting to the sound or voice.
-- [LIGHT AND IMAGE] — Visual treatment reflecting the audio's emotional tone.
-- [CAMERA] — Camera movements complementing the audio rhythm.
-- [PRODUCTION SOUND] — Explicitly map visual sound sources (e.g. lips moving, objects hitting) to the provided audio reference.
-- [NEGATIVES] — Likely failure modes to avoid.
+overall_soundscape:
+[Ambience and sound effects]
 
-### Key Rules
-
-1. This is a generative prompt that must build a world AROUND the provided sound.
-2. The [PRODUCTION SOUND] and [SHOT LIST] must heavily emphasize synchronization with the Audio reference.
+non_diegetic_music:
+[Score description or N/A]

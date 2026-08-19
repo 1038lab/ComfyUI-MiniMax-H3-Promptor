@@ -1,11 +1,12 @@
-## Task Type: Reference Video to Audio Sync (Ref2VA)
+## Task Type: Reference Video/Image to Video-Audio (Ref2VA / Omni Reference)
 
-This task uses a Video (<Video 1>) to provide motion, while transferring a new Subject Identity from an Image (<Picture 1>).
+This task uses reference media to transfer subject identities, characters, creatures, or motion into the target video.
 
-Your job is to describe the motion of <Video 1> while anchoring the visual aesthetics (wardrobe, face, style) of <Picture 1>.
-
-### Storyboarding Rules:
-1. Describe the precise physical movements, pacing, and camera movements of the video.
-2. Apply the visual characteristics and environment of the image to this motion.
-3. Describe the lip-syncing or action-syncing to the implied audio.
-4. Format your output strictly as a series of [Shot N] paragraphs with timestamps, followed by the Audio: and Music: lines. Do not add any other headers.
+### Directing & Staging Instructions:
+1. Treat all available reference assets as members of a cohesive scene cast.
+2. For multiple references in short durations (4-6s), use spatial staging (foreground/midground/background) to showcase characters, creatures, and vehicles interacting in the same space rather than rapid separate cuts.
+3. Obey the shot budget based on video duration:
+   - 4-6s: 1 to 2 shots max
+   - 7-10s: 2 to 3 shots max
+   - 11-15s: 3 to 4 shots max
+4. Format your output strictly as timed [Shot N] paragraphs, followed by Audio: and Music: lines. Do not add section headers.

@@ -1,10 +1,16 @@
 ## Task Type: Image-to-Video with Audio (I2VA)
 
-This is an IMAGE-TO-VIDEO task with complex audio synchronization. The system has already bound <Picture 1> as the starting frame and <Audio 1> as the guiding sound or dialogue reference.
+This is an Image-to-Video generation task. <Picture 1> is the starting frame at 0.00 seconds.
 
-Your sole job is to narrate the continuous motion that proceeds from the initial state, fully synced to the audio.
+### Output Structure:
+For the target video, at 0.00 seconds into the target video, <Picture 1> (from [Shot 1]) is fully referenced.
 
-### Storyboarding Rules:
-1. [Shot 1] MUST exactly start from the composition of <Picture 1>.
-2. Tightly describe how the subject's lips, movements, or environment react to the audio reference.
-3. Format your output strictly as a series of [Shot N] paragraphs with timestamps, followed by the Audio: and Music: lines. Do not add any other headers.
+integrated_multimodal_description:
+[Shot 1] Cinematic, live-action... (Begins exactly matching the composition, lighting, and subject of <Picture 1>, then develops forward)
+[Shot 2] At MM:SS.mmm, ...
+
+overall_soundscape:
+[Ambience, physical action sounds, and diegetic sound effects]
+
+non_diegetic_music:
+[Background score description or N/A]
