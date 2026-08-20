@@ -206,7 +206,8 @@ class H3_Vision_Analyzer(io.ComfyNode):
             
             # For output port:
             # Bypass `torch.cat()` and output raw list for native ComfyUI List Expansion (no deformation).
-            out_images = parsed_images_for_vlm if parsed_images_for_vlm else None
+            # OUTPUT_IS_LIST = (False, True) requires out_images to always be a list (empty [] when no images loaded).
+            out_images = parsed_images_for_vlm
                 
             # --- 3. Run LLM Vision Analysis ---
             config_manager = get_config_manager()
@@ -291,7 +292,7 @@ class H3_Vision_Analyzer(io.ComfyNode):
 
         except Exception as e:
             log_error(str(e))
-            return io.NodeOutput(f"[Analyzer Exception]: {str(e)}", None)
+            return io.NodeOutput(f"[Analyzer Exception]: {str(e)}", [])
 
 NODE_CLASS_MAPPINGS = {
     "H3_Vision_Analyzer": H3_Vision_Analyzer,

@@ -71,7 +71,7 @@ DEFAULT_CONFIG = {
             "api_base": "http://localhost:1234/v1",
             "api_key": "sk-dummy",
             "model": "local-model",
-            "enabled": False,
+            "enabled": True,
             "batch_vision": False
         },
     },
