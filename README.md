@@ -113,19 +113,30 @@ Both cloud and local offline providers are supported natively. **Ollama** and **
 | **Gemini** | Cloud (`gemini`) | Google AI Studio | `gemini-2.5-flash` | Requires Google AI API Key |
 | **Anthropic** | Cloud (`claude`) | Anthropic API | `claude-3-5-sonnet-latest` | Requires Anthropic API Key |
 
-### 💻 Running Completely Offline / Locally (LM Studio & Ollama)
-1. **LM Studio**:
-   - Start LM Studio and load any Vision LLM (e.g. Qwen2-VL, MiniCPM-V, Llama-3.2-Vision).
-   - Start the local server in LM Studio (default port `1234`).
-   - In ComfyUI, simply choose `lmstudio` from the `provider` dropdown on the node.
-2. **Ollama**:
-   - Run `ollama serve` and pull your model (e.g., `ollama run llama3.2-vision`).
-   - Select `ollama` from the `provider` dropdown. (Automatic VRAM clearing is handled internally to save GPU memory for video generation).
-3. **Settings Hub**:
-   - Click the **Gear Icon** (Settings) in ComfyUI -> **MiniMax H3** to graphically adjust ports, toggle providers on/off, or add custom OpenAI-compatible endpoints (DeepSeek, Groq, OpenRouter, SiliconFlow, llama.cpp).
-   - Alternatively, edit `config.json` in the custom node directory.
+### 💻 Running Completely Offline / Locally (Ollama, LM Studio & llama.cpp)
 
-> All providers support multimodal image & video analysis in `H3_Vision_Analyzer`.
+1. **LM Studio**:
+   - Start LM Studio and load any Vision or Text LLM (e.g. Qwen2.5, MiniCPM-V, Llama-3.2).
+   - Start the local server in LM Studio (default port `1234`), then choose `lmstudio` from the `provider` dropdown in ComfyUI.
+
+2. **Ollama**:
+   - Run `ollama serve` and pull your model (e.g., `ollama run llama3.2-vision` or `ollama run llama3.2`).
+   - Select `ollama` from the `provider` dropdown. (Automatic VRAM clearing is handled internally to save GPU memory).
+
+3. **llama.cpp (`llama-server`)**:
+   - Start `llama-server` with 8k+ context and GPU offload:
+     ```bash
+     ./llama-server -m your_model.gguf -c 8192 -ngl 99 -fa --host 0.0.0.0 --port 8080
+     ```
+
+4. **LAN / Multi-Machine & Remote Setup**:
+   - If running the LLM server on another PC in your local network, ensure the server is started with `--host 0.0.0.0`.
+   - In ComfyUI Settings Hub -> **MiniMax H3**, set the API Base URL to your LAN IP (e.g. `http://192.168.1.100:8080/v1`).
+
+> [!TIP]
+> **Local Inference Optimization:**
+> - **Context Size**: H3 Promptor uses a multi-stage prompt engine. Always launch `llama-server` with `-c 8192` (or higher) and `-ngl 99` to avoid context overflow errors and ensure fast GPU inference.
+> - **Faster Generation**: On the `H3_Promptor` node, lower `max_tokens` from `4096` to `1024` or `2048` for significantly faster response times with local models.
 
 
 ---
