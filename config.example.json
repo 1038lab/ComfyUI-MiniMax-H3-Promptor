@@ -51,7 +51,7 @@
       "api_base": "http://localhost:1234/v1",
       "api_key": "sk-dummy",
       "model": "local-model",
-      "enabled": false,
+      "enabled": true,
       "batch_vision": false
     }
   },
