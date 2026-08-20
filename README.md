@@ -101,27 +101,32 @@ The `H3_Promptor` uses a highly intelligent backend algorithm to instantly detec
 
 ---
 
-## 🔌 Supported LLM Providers
+## 🔌 Supported LLM Providers & Local Model Setup
 
-All 4 providers are implemented as **independent, native API integrations** — no wrappers, no compatibility layers. Each provider file is fully self-contained for easy maintenance.
+Both cloud and local offline providers are supported natively. **Ollama** and **LM Studio** are enabled by default for zero-friction local workflows!
 
-| Provider | File | API Format | Default Model | Auth Method |
+| Provider | Type | Default Endpoint | Default Model | Notes / Auth |
 |---|---|---|---|---|
-| **OpenAI** | `provider_openai.py` | `/v1/chat/completions` | `gpt-4o` | `Bearer` Token |
-| **Ollama** | `provider_ollama.py` | Ollama `/api/chat` | `llama3.2` | None (local) |
-| **Gemini** | `provider_gemini.py` | Google `generateContent` | `gemini-2.5-flash` | URL `?key=` param |
-| **Anthropic** | `provider_claude.py` | Anthropic Messages API | `claude-3-5-sonnet-latest` | `x-api-key` Header |
+| **LM Studio** | Local (`openai`) | `http://localhost:1234/v1` | Loaded Model | Enabled by default; no API key required |
+| **Ollama** | Local (`ollama`) | `http://localhost:11434` | `llama3.2` / `llama3.2-vision` | Enabled by default; auto-unloads VRAM |
+| **OpenAI** | Cloud (`openai`) | `https://api.openai.com/v1` | `gpt-5` / `gpt-4o` | Requires OpenAI API Key |
+| **Gemini** | Cloud (`gemini`) | Google AI Studio | `gemini-2.5-flash` | Requires Google AI API Key |
+| **Anthropic** | Cloud (`claude`) | Anthropic API | `claude-3-5-sonnet-latest` | Requires Anthropic API Key |
 
-> **Local & Compatible APIs (LMStudio, llama.cpp, DeepSeek, etc.)**: 
-> Because LMStudio, llama.cpp, vLLM, and many other providers use the standard OpenAI API format, they are fully supported out of the box! Simply select **OpenAI** as your provider and update the `"api_base"` URL in your `config.json` to point to your local or custom endpoint (e.g., `"http://localhost:1234/v1"` for LMStudio). You can use any dummy string for local API keys.
-> 
-> *Popular compatible APIs you can use with the OpenAI setting:*
-> *   **DeepSeek**: Highly affordable and powerful models, very popular.
-> *   **Groq**: Lightning-fast inference API powered by LPU hardware.
-> *   **OpenRouter**: A model aggregator platform widely used by international users.
-> *   **Together AI / SiliconFlow**: APIs providing access to various open-source models (like Llama 3).
+### 💻 Running Completely Offline / Locally (LM Studio & Ollama)
+1. **LM Studio**:
+   - Start LM Studio and load any Vision LLM (e.g. Qwen2-VL, MiniCPM-V, Llama-3.2-Vision).
+   - Start the local server in LM Studio (default port `1234`).
+   - In ComfyUI, simply choose `lmstudio` from the `provider` dropdown on the node.
+2. **Ollama**:
+   - Run `ollama serve` and pull your model (e.g., `ollama run llama3.2-vision`).
+   - Select `ollama` from the `provider` dropdown. (Automatic VRAM clearing is handled internally to save GPU memory for video generation).
+3. **Settings Hub**:
+   - Click the **Gear Icon** (Settings) in ComfyUI -> **MiniMax H3** to graphically adjust ports, toggle providers on/off, or add custom OpenAI-compatible endpoints (DeepSeek, Groq, OpenRouter, SiliconFlow, llama.cpp).
+   - Alternatively, edit `config.json` in the custom node directory.
 
-> All providers support multimodal (image) inputs for the Vision Analyzer node.
+> All providers support multimodal image & video analysis in `H3_Vision_Analyzer`.
+
 
 ---
 
