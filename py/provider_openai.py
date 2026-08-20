@@ -42,6 +42,7 @@ class OpenAIProvider(LLMProvider):
 
         headers = {
             "Content-Type": "application/json",
+            "Connection": "close",
         }
         if self.api_key:
             headers["Authorization"] = f"Bearer {self.api_key}"
@@ -90,6 +91,12 @@ class OpenAIProvider(LLMProvider):
                     timeout=REQUEST_TIMEOUT,
                 )
 
+                err_text = response.text
+                hint = ""
+                err_lower = err_text.lower()
+                if any(k in err_lower for k in ["context", "exceed", "slot", "out of memory", "kv cache", "failed to decode"]):
+                    hint = " (Hint: Local LLM context window exceeded or slot unavailable. Try launching llama-server with higher context like '-c 8192 -ngl 99')."
+
                 # Handle HTTP errors
                 if response.status_code == 401 or response.status_code == 403:
                     return LLMResponse(
@@ -115,13 +122,13 @@ class OpenAIProvider(LLMProvider):
                         time.sleep(RETRY_DELAY)
                         continue
                     return LLMResponse(
-                        error=f"Server error (HTTP {response.status_code}) after retries: {response.text[:200]}",
+                        error=f"Server error (HTTP {response.status_code}) after retries: {err_text[:200]}{hint}",
                         model=model_name,
                     )
 
                 if not response.ok:
                     return LLMResponse(
-                        error=f"HTTP {response.status_code}: {response.text[:200]}",
+                        error=f"HTTP {response.status_code}: {err_text[:200]}{hint}",
                         model=model_name,
                     )
 
