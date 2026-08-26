@@ -27,6 +27,10 @@ RETRY_DELAY = 2.0
 class OpenAIProvider(LLMProvider):
     """OpenAI-compatible API provider."""
 
+    def __init__(self, api_base: str, api_key: str = "", model: str = "", disable_thinking: bool = True):
+        super().__init__(api_base=api_base, api_key=api_key, model=model)
+        self.disable_thinking = disable_thinking
+
     def chat(
         self,
         system_prompt: str,
@@ -79,6 +83,15 @@ class OpenAIProvider(LLMProvider):
             "temperature": temperature,
             "max_tokens": max_tokens,
         }
+
+        # Explicitly disable reasoning/thinking tokens on compatible endpoints to avoid timeout & token budget waste
+        api_host = self.api_base.lower()
+        model_lower = str(model_name or "").lower()
+        is_thinking_model = any(marker in model_lower for marker in (
+            "qwen3", "deepseek", "glm-4.5", "glm-4.6", "glm-4.7", "glm-5", "hunyuan", "r1", "reasoner"
+        ))
+        if self.disable_thinking and ("siliconflow" in api_host or is_thinking_model):
+            payload["enable_thinking"] = False
 
         log_debug(f"OpenAI request → {url} | model={model_name} | temp={temperature}")
 

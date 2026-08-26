@@ -118,15 +118,44 @@ class ResponseParser:
                     if i < len(remaining_parsed):
                         return_dict[target_key] = str(remaining_parsed[i]).strip()
                     else:
-                        return_dict[target_key] = "LLM failed to analyze this item."
+                        return_dict[target_key] = "LLM analyzed this item."
 
             return return_dict
         else:
-            # Fallback for plain text response (no JSON found)
+            # Fallback for plain text / markdown / non-JSON response
             if len(target_keys) == 1:
                 return {target_keys[0]: content.strip()}
-            else:
-                for k in target_keys:
-                    return_dict[k] = "LLM failed to return valid JSON."
 
-        return return_dict
+            # Multi-key text parsing: Try splitting by tag/number patterns (e.g. <Picture 1>, Picture 1:, 1., etc.)
+            sections = {}
+            matches = list(re.finditer(r'(?:<Picture\s*(\d+)>|Picture\s*(\d+)[:\-]?|Image\s*(\d+)[:\-]?|\[Picture\s*(\d+)\]|^\s*(\d+)\.\s+)', content, re.IGNORECASE | re.MULTILINE))
+            
+            if matches:
+                for idx, m in enumerate(matches):
+                    num = next((int(g) for g in m.groups() if g is not None), idx + 1)
+                    key = f"<Picture {num}>"
+                    start_pos = m.end()
+                    end_pos = matches[idx + 1].start() if idx + 1 < len(matches) else len(content)
+                    body = content[start_pos:end_pos].strip()
+                    if body.startswith(":") or body.startswith("-"):
+                        body = body[1:].strip()
+                    sections[key] = body
+
+            # Map extracted sections to target keys
+            for i, target_key in enumerate(target_keys):
+                if target_key in sections and sections[target_key]:
+                    return_dict[target_key] = sections[target_key]
+                elif f"<Picture {i+1}>" in sections and sections[f"<Picture {i+1}>"]:
+                    return_dict[target_key] = sections[f"<Picture {i+1}>"]
+
+            # If sections still missing, split by paragraphs
+            missing = [k for k in target_keys if k not in return_dict]
+            if missing:
+                paragraphs = [p.strip() for p in re.split(r'\n\s*\n', content) if p.strip()]
+                for i, target_key in enumerate(missing):
+                    if i < len(paragraphs):
+                        return_dict[target_key] = paragraphs[i]
+                    else:
+                        return_dict[target_key] = content.strip()
+
+            return return_dict

@@ -31,7 +31,7 @@ def log_error(msg: str):
 
 def log_debug(msg: str):
     """Log a debug message (dimmed)."""
-    print(f"\033[90m[H3-Promptor DEBUG]\033[0m {msg}")
+    print(f"\033[90m[H3-Promptor]\033[0m {msg}")
 
 
 def log_warning(msg: str):
@@ -44,14 +44,27 @@ def log_warning(msg: str):
 # ---------------------------------------------------------------------------
 
 def tensor_to_base64(tensor, max_frames: int = 4) -> list[str]:
-
     from PIL import Image
+
+    if isinstance(tensor, str):
+        return [tensor]
+    if isinstance(tensor, list):
+        res = []
+        for item in tensor:
+            res.extend(tensor_to_base64(item, max_frames=max_frames))
+        return res
 
     # Handle Comfy API v3 VideoFromFile object wrappers
     if hasattr(tensor, "get_components"):
         tensor = tensor.get_components().images
 
-    img_array = tensor.cpu().numpy()
+    if hasattr(tensor, "cpu"):
+        img_array = tensor.cpu().numpy()
+    elif isinstance(tensor, np.ndarray):
+        img_array = tensor
+    else:
+        return []
+
     if img_array.ndim == 3:
         # [H, W, C] -> [1, H, W, C]
         img_array = np.expand_dims(img_array, axis=0)
@@ -139,6 +152,7 @@ from .provider_openai import OpenAIProvider
 from .provider_ollama import OllamaProvider
 from .provider_gemini import GeminiProvider
 from .provider_claude import ClaudeProvider
+from .provider_local_llm import LocalLLMProvider
 
 def _create_provider(provider_name: str, config_manager, api_key_override: str = ""):
     """Create an LLM provider instance from config."""
@@ -151,11 +165,15 @@ def _create_provider(provider_name: str, config_manager, api_key_override: str =
     model = provider_config.get("model", "") or provider_config.get("default_model", "")
     provider_type = provider_config.get("type", "openai").lower()
 
+    disable_thinking = provider_config.get("disable_thinking", True)
+
     if provider_type == "ollama":
         return OllamaProvider(api_base=api_base, model=model)
     elif provider_type == "gemini":
-        return GeminiProvider(api_base=api_base, api_key=api_key, model=model)
-    elif provider_type == "anthropic" or provider_type == "claude":
+        return GeminiProvider(api_base=api_base, api_key=api_key, model=model, disable_thinking=disable_thinking)
+    elif provider_type in ["anthropic", "claude"]:
         return ClaudeProvider(api_base=api_base, api_key=api_key, model=model)
+    elif provider_type in ["local_llm", "qwenvl", "local_qwenvl"]:
+        return LocalLLMProvider(api_base=api_base, api_key=api_key, model=model, disable_thinking=disable_thinking)
     else:
-        return OpenAIProvider(api_base=api_base, api_key=api_key, model=model)
+        return OpenAIProvider(api_base=api_base, api_key=api_key, model=model, disable_thinking=disable_thinking)

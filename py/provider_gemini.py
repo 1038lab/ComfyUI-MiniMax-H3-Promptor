@@ -27,6 +27,10 @@ RETRY_DELAY = 2.0
 class GeminiProvider(LLMProvider):
     """Google Gemini native API provider."""
 
+    def __init__(self, api_base: str, api_key: str = "", model: str = "", disable_thinking: bool = True):
+        super().__init__(api_base=api_base, api_key=api_key, model=model)
+        self.disable_thinking = disable_thinking
+
     def chat(
         self,
         system_prompt: str,
@@ -70,6 +74,15 @@ class GeminiProvider(LLMProvider):
         else:
             parts.append({"text": user_message})
 
+        generation_config = {
+            "temperature": temperature,
+            "maxOutputTokens": max_tokens,
+        }
+
+        # Configure thinking budget for Gemini 2.5/3.x/thinking models
+        if self.disable_thinking and any(k in str(model_name).lower() for k in ("thinking", "2.5", "3.", "flash")):
+            generation_config["thinkingConfig"] = {"thinkingBudget": 0}
+
         payload = {
             "system_instruction": {
                 "parts": [{"text": system_prompt}]
@@ -80,10 +93,7 @@ class GeminiProvider(LLMProvider):
                     "parts": parts,
                 }
             ],
-            "generationConfig": {
-                "temperature": temperature,
-                "maxOutputTokens": max_tokens,
-            },
+            "generationConfig": generation_config,
         }
 
         log_debug(f"Gemini request → {model_name} | temp={temperature}")

@@ -180,20 +180,140 @@ class PostProcessor:
         return summary, "\n".join(retention)
 
     @staticmethod
+    def _strip_filenames(text: str) -> str:
+        """Strip raw media filenames that LLMs may inadvertently output."""
+        return re.sub(
+            r"(?<![\w/\\])[\w .()\-\u4e00-\u9fff]+\.(?:png|jpe?g|webp|bmp|gif|mp4|mov|webm|mkv|avi|mp3|wav|flac|m4a|ogg|aac)(?!\w)",
+            "",
+            text,
+            flags=re.IGNORECASE,
+        ).strip()
+
+    @staticmethod
+    def _normalize_subject_shorthand(text: str) -> str:
+        """Guarantee that standalone S1-S20 references use official parentheses (S1)."""
+        return re.sub(
+            r"(?<![A-Za-z0-9_(<（])S([1-9]|1\d|20)(?![A-Za-z0-9_)>）])",
+            lambda match: f"(S{match.group(1)})",
+            str(text),
+            flags=re.IGNORECASE,
+        )
+
+    @staticmethod
+    def _ensure_fl2va_picture_labels(
+        text: str, task_type: str, duration: float = 5.0, output_language: str = "English"
+    ) -> str:
+        """Guarantee that an FL2VA result retains both official bare picture labels."""
+        if str(task_type).upper() != "FL2VA":
+            return text
+        lowered = str(text).lower()
+        if "picture 1" in lowered and "picture 2" in lowered:
+            return text
+        if str(output_language).lower() in {"中文", "chinese", "zh", "zh-cn"}:
+            alignment = (
+                f"参考图像与目标视频对齐关系：picture 1 对齐目标视频的 0.00 秒首帧；"
+                f"picture 2 对齐目标视频的 {duration:.2f} 秒尾帧。"
+            )
+        else:
+            alignment = (
+                "Reference-picture alignment: picture 1 is the target video's exact opening frame at 0.00s; "
+                f"picture 2 is its exact ending frame at {duration:.2f}s."
+            )
+        return f"{alignment}\n\n{text}".strip()
+
+    @staticmethod
+    def _extract_explicit_dialogues(prompt: str) -> list[tuple[str, str]]:
+        """Extract only dialogue that the user explicitly supplied, preserving exact wording."""
+        source = str(prompt or "")
+        candidates = []
+        speech_marker = r"(?:说|说道|说着|喊|喊道|问|问道|回答|答道|台词|对白|says?|speaks?|shouts?|asks?|replies?)"
+        patterns = (
+            rf"{speech_marker}[^\n“”‘’\"']{{0,20}}[：:]?\s*[“\"]([^”\"\n]+)[”\"]",
+            rf"{speech_marker}[^\n“”‘’\"']{{0,20}}[：:]?\s*[‘']([^’'\n]+)[’']",
+            rf"{speech_marker}\s*[：:]\s*([^\n；;]+)",
+        )
+        for pattern in patterns:
+            for match in re.finditer(pattern, source, flags=re.IGNORECASE):
+                value = match.group(1).strip().strip("“”‘’\"'").strip()
+                existing = {item[0] for item in candidates}
+                if not value or value in existing or any(value in item or item in value for item in existing):
+                    continue
+                language = "Chinese" if re.search(r"[\u3400-\u9fff]", value) else "English"
+                candidates.append((value, language))
+        return candidates
+
+    @staticmethod
+    def _ensure_supplied_dialogues(
+        text: str, user_description: str, output_language: str = "English"
+    ) -> str:
+        """Keep supplied user dialogue formatted as <d>[Language]...</d> inside the main shot narrative."""
+        result = str(text)
+        dialogues = PostProcessor._extract_explicit_dialogues(user_description)
+        if not dialogues:
+            return result
+
+        dialogues_to_insert = []
+        for index, (dialogue, language) in enumerate(dialogues, start=1):
+            tag = f"<d>[{language}]{dialogue}</d>"
+            if tag in result:
+                continue
+            if re.search(rf'<d>[^<]*{re.escape(dialogue)}[^<]*</d>', result, re.IGNORECASE):
+                continue
+            if dialogue in result:
+                for quoted in (f"“{dialogue}”", f"‘{dialogue}’", f'"{dialogue}"', f"'{dialogue}'"):
+                    if quoted in result:
+                        result = result.replace(quoted, tag, 1)
+                        break
+                else:
+                    result = result.replace(dialogue, tag, 1)
+                continue
+            dialogues_to_insert.append((index, tag))
+
+        if dialogues_to_insert:
+            shot_match = re.search(r'\[Shot\s+1\b[^\]]*\]\s*', result, re.IGNORECASE)
+            if shot_match:
+                insert_pos = shot_match.end()
+            else:
+                desc_match = re.search(
+                    r'(?:integrated_multimodal_description|detailed_description):\s*\n?', result, re.IGNORECASE
+                )
+                insert_pos = desc_match.end() if desc_match else 0
+
+            sentences = []
+            for order, (index, tag) in enumerate(dialogues_to_insert):
+                if str(output_language).lower() in {"中文", "chinese", "zh", "zh-cn"}:
+                    action = "说" if order == 0 else "随后继续说"
+                    sentences.append(f"画面中的说话者 (S{index}) {action}：{tag}")
+                else:
+                    action = "says" if order == 0 else "then continues"
+                    sentences.append(f"The on-screen speaker (S{index}) {action}: {tag}")
+
+            insertion = " " + " ".join(sentences) + " "
+            result = result[:insert_pos] + insertion + result[insert_pos:]
+
+        # Clean up any potential nested <d> tags
+        result = re.sub(r'<d>\[(\w+)\]\s*<d>\[\1\](.*?)</d>\s*</d>', r'<d>[\1]\2</d>', result, flags=re.IGNORECASE | re.DOTALL)
+        return result
+
+    @staticmethod
     def compile_final_prompt(
         creative_text: str,
         task_type: str,
         subject_definitions: str = "",
         alignment_instructions: str = "",
         duration: float = 5.0,
+        user_description: str = "",
+        output_language: str = "English",
     ) -> str:
         """
         Assemble the final official MiniMax prompt payload.
         Enforces strict official tags (<Subject N>, <Picture N>, <Video N>, <Audio N>)
         and guarantees clean, deterministic section structuring.
         """
-        # 1. Clean LLM artifacts
+        # 1. Clean LLM artifacts and filenames
         prompt_text = sanitize_llm_output(creative_text)
+        prompt_text = PostProcessor._strip_filenames(prompt_text)
+        prompt_text = PostProcessor._normalize_subject_shorthand(prompt_text)
         
         # 2. Sanitize any hallucinated tags like <Environment N> or <Setting N> into <Subject N>
         def _fix_tag(match):
@@ -255,11 +375,26 @@ class PostProcessor:
             parts.append("non_diegetic_music:\n" + music)
 
         final_prompt = "\n\n".join(parts).strip()
+        final_prompt = PostProcessor._ensure_fl2va_picture_labels(
+            final_prompt, task_type, duration=duration, output_language=output_language
+        )
+        final_prompt = PostProcessor._ensure_supplied_dialogues(
+            final_prompt, user_description=user_description, output_language=output_language
+        )
+        final_prompt = PostProcessor._normalize_subject_shorthand(final_prompt)
         return final_prompt
 
     @staticmethod
-    def clean(raw_output: str, task_type: str = "T2V", full_task_desc: str = "", 
-              subject_defs: str = "", alignment_inst: str = "", duration: float = 5.0) -> str:
+    def clean(
+        raw_output: str,
+        task_type: str = "T2V",
+        full_task_desc: str = "", 
+        subject_defs: str = "",
+        alignment_inst: str = "",
+        duration: float = 5.0,
+        user_description: str = "",
+        output_language: str = "English",
+    ) -> str:
         """
         Main entry point for prompt post-processing and compilation.
         """
@@ -267,7 +402,13 @@ class PostProcessor:
             return ""
 
         final_compiled_prompt = PostProcessor.compile_final_prompt(
-            raw_output, task_type, subject_defs, alignment_inst, duration=duration
+            raw_output,
+            task_type,
+            subject_defs,
+            alignment_inst,
+            duration=duration,
+            user_description=user_description,
+            output_language=output_language,
         )
 
         if len(final_compiled_prompt) > H3_MAX_CHARS:

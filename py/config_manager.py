@@ -74,6 +74,17 @@ DEFAULT_CONFIG = {
             "enabled": True,
             "batch_vision": False
         },
+        "prov_1720000007": {
+            "name": "ComfyUI-QwenVL (Local / GGUF)",
+            "type": "qwenvl",
+            "api_base": "",
+            "api_key": "",
+            "model": "Qwen3VL-4B-Instruct-Q4_K_M.gguf",
+            "enabled": False,
+            "disable_thinking": True,
+            "batch_vision": False,
+            "batch_size": 4
+        },
     },
     "defaults": {
         "vision_provider": "prov_1720000001",
@@ -155,6 +166,8 @@ class ConfigManager:
         providers = config.get("providers", {})
 
         if provider_name.lower() not in providers:
+            if provider_name.lower() in DEFAULT_CONFIG.get("providers", {}):
+                return DEFAULT_CONFIG["providers"][provider_name.lower()]
             from .utils import log_error
             log_error(
                 f"Provider '{provider_name}' not found in config. "
@@ -165,22 +178,55 @@ class ConfigManager:
         return providers[provider_name.lower()]
 
     def find_provider_by_display_name(self, display_name: str) -> str:
-        """Resolves a UI string like 'openrouter (gpt-5)' back to its internal unique config key UUID"""
+        """Resolves a UI string like 'openrouter (gpt-5)', raw name, or provider ID back to its internal unique config key UUID"""
         config = self.load()
-        for k, v in config.get("providers", {}).items():
-            # Support the new display name logic with UUIDs, while cleanly falling back to the old string key logic
+        providers = config.get("providers", {})
+        if not display_name:
+            return config.get("defaults", {}).get("vision_provider", "")
+
+        # 1. Direct match on provider key
+        if display_name in providers:
+            return display_name
+
+        import re
+        clean_target = re.sub(r"\s*\([^)]*\)\s*$", "", display_name).strip().lower()
+        norm_target = re.sub(r"[\s_\-]+", "-", clean_target)
+
+        # 2. Match display format, raw name, normalized name, or model name
+        for k, v in providers.items():
             name = v.get("name", k)
             model_name = v.get("model", "")
+            clean_raw = re.sub(r"\s*\([^)]*\)\s*$", "", name).strip()
+            norm_raw = re.sub(r"[\s_\-]+", "-", clean_raw.lower())
             
-            if model_name:
-                expected = f"{name} ({model_name})"
-            else:
-                expected = name
-                
-            if display_name == expected:
+            expected = f"{clean_raw} ({model_name})" if model_name else clean_raw
+            if display_name == expected or display_name.lower() == expected.lower():
                 return k
-                
-        # If absolutely no match is found, fallback to treating the exact string as the key
+            if display_name.lower() == name.lower() or display_name.lower() == k.lower():
+                return k
+            if clean_target and (clean_target == clean_raw.lower() or clean_target == name.lower()):
+                return k
+            if norm_target and (norm_target == norm_raw or norm_target in norm_raw):
+                return k
+            if model_name and (clean_target in model_name.lower() or norm_target in model_name.lower().replace("_", "-")):
+                return k
+
+        # 3. Fuzzy token match across name + model
+        tokens = [t for t in re.split(r"[^a-zA-Z0-9\.]+", clean_target) if len(t) > 1]
+        if tokens:
+            for k, v in providers.items():
+                name = v.get("name", k).lower()
+                model_name = v.get("model", "").lower()
+                combined = f"{name} {model_name}"
+                if all(t in combined for t in tokens):
+                    return k
+
+        # 4. If still not found, check if key is in lowercase keys
+        for k in providers:
+            if k.lower() == display_name.lower():
+                return k
+
+        # Fallback
         return display_name
 
     def get_defaults(self) -> dict:

@@ -10,6 +10,27 @@ async def get_config(request):
     config = cm.load()
     return web.json_response(config)
 
+@PromptServer.instance.routes.get("/minimax-h3/local_models")
+async def get_local_models(request):
+    """Scan and return available local GGUF models."""
+    try:
+        from .provider_local_llm import LocalLLMProvider
+        prov = LocalLLMProvider()
+        qwenvl_path = prov._find_qwenvl_custom_node()
+        installed = qwenvl_path is not None
+        models = prov.get_available_models()
+        downloaded_count = sum(1 for m in models if m.get("downloaded"))
+        return web.json_response({
+            "status": "success",
+            "installed": installed,
+            "qwenvl_path": str(qwenvl_path) if qwenvl_path else "",
+            "models": models,
+            "total_count": len(models),
+            "downloaded_count": downloaded_count,
+        })
+    except Exception as e:
+        return web.json_response({"status": "error", "message": str(e), "installed": False, "models": [], "total_count": 0, "downloaded_count": 0})
+
 @PromptServer.instance.routes.post("/minimax-h3/save_config")
 async def save_config(request):
     """Save the new configuration."""
@@ -40,6 +61,46 @@ async def test_connection(request):
         if provider_type == "claude":
             provider_type = "anthropic"
         
+        if provider_type in ["local_llm", "qwenvl", "local_qwenvl"]:
+            from .provider_local_llm import LocalLLMProvider
+            prov = LocalLLMProvider(model=model or "")
+            qwenvl_path = prov._find_qwenvl_custom_node()
+            if not qwenvl_path:
+                return web.json_response({
+                    "status": "error",
+                    "message": "Local engine (ComfyUI-QwenVL) custom node not found. Please install ComfyUI-QwenVL from ComfyUI Manager."
+                })
+            
+            # Live test probe using selected model
+            try:
+                resp = prov.chat(
+                    system_prompt="You are a helpful assistant.",
+                    user_message="Say OK",
+                    max_tokens=4,
+                    temperature=0.1,
+                    model=model,
+                )
+                if resp.success and resp.content:
+                    return web.json_response({
+                        "status": "success",
+                        "message": f"Engine & model '{resp.model}' verified successfully! (Response: {resp.content[:40]})"
+                    })
+                elif resp.error:
+                    return web.json_response({
+                        "status": "error",
+                        "message": f"Local inference failed: {resp.error}"
+                    })
+                else:
+                    return web.json_response({
+                        "status": "success",
+                        "message": f"Engine verified for model '{resp.model}'."
+                    })
+            except Exception as e:
+                return web.json_response({
+                    "status": "error",
+                    "message": f"Test probe error: {str(e)}"
+                })
+
         if not api_base:
             if provider_type == "openai":
                 api_base = "https://api.openai.com/v1"

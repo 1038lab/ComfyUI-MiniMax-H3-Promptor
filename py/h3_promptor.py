@@ -9,6 +9,24 @@ and this integration's license terms.
 Source: https://github.com/1038lab/ComfyUI-Minimax-H3-Promptor
 """
 
+try:
+    from comfy_api.latest import io
+except ImportError:
+    class _DummyIO:
+        class ComfyNode: pass
+        class NodeOutput:
+            def __init__(self, *args, **kwargs):
+                self.args = args
+        class Schema:
+            def __init__(self, *args, **kwargs): pass
+        class _Field:
+            @classmethod
+            def Input(cls, *args, **kwargs): return None
+            @classmethod
+            def Output(cls, *args, **kwargs): return None
+        Combo = Image = Video = Audio = String = Float = Int = _Field
+    io = _DummyIO()
+
 from .config_manager import get_config_manager
 from .task_detector import TASK_TYPE_OPTIONS, TaskDetector
 from .prompt_builder import PromptBuilder
@@ -16,25 +34,26 @@ from .post_processor import PostProcessor
 from .utils import log_info, log_error, _create_provider
 
 
-from .config_manager import get_config_manager
-
-class H3_Promptor:
-
-    def __init__(self):
-        self.prompt_builder = PromptBuilder()
+class H3_Promptor(io.ComfyNode):
 
     @classmethod
-    def INPUT_TYPES(s):
+    def define_schema(cls):
         try:
             _config = get_config_manager().load()
             active_providers = []
             default_uuid = _config.get("defaults", {}).get("promptor_provider", "")
             default_choice = ""
             
+            import re
             for k, v in _config.get("providers", {}).items():
                 if v.get("enabled", True) is not False:
-                    model_name = v.get("model", "")
-                    name = f"{v.get('name', k)} ({model_name})" if model_name else v.get("name", k)
+                    model_name = v.get("model", "").strip()
+                    raw_name = v.get("name", k)
+                    clean_raw = re.sub(r"\s*\([^)]*\)\s*$", "", raw_name).strip()
+                    if model_name:
+                        name = f"{clean_raw} ({model_name})"
+                    else:
+                        name = clean_raw
                     active_providers.append(name)
                     if k == default_uuid:
                         default_choice = name
@@ -52,65 +71,76 @@ class H3_Promptor:
             active_providers = ["Error Loading Providers"]
             default_choice = active_providers[0]
 
-        return {
-            "required": {
-                "task_type": (TASK_TYPE_OPTIONS, {
-                    "default": TASK_TYPE_OPTIONS[0],
-                    "tooltip": "Forces the H3 prompt format (Text-to-Video, Image-to-Video, etc.)"
-                }),
-                "description": ("STRING", {
-                    "multiline": True,
-                    "default": "",
-                    "tooltip": "Your main creative description of the scene.",
-                }),
-                "duration": ("FLOAT", {
-                    "default": 5, "min": 4, "max": 15, "step": 0.5,
-                    "tooltip": "Vaild duration for Minimax H3 is 4-15 seconds.",
-                }),
-            },
-            "optional": {
-                "vision_context": ("STRING", {
-                    "multiline": True,
-                    "forceInput": True,
-                    "default": "",
-                    "tooltip": "Connect the output from H3_Vision_Analyzer here.",
-                }),
-                "reference_images": (["Auto", "1", "2", "3", "4", "5", "6", "7", "8", "9"], {
-                    "default": "Auto",
-                    "tooltip": "Auto uses Vision Analyzer count. Otherwise manually set how many images are connected to Minimax (max 9).",
-                }),
-                "reference_videos": (["Auto", "1", "2", "3"], {
-                    "default": "Auto",
-                    "tooltip": "Auto uses Vision Analyzer count. Otherwise manually set how many videos are connected (max 3).",
-                }),
-                "reference_audios": (["Auto", "1", "2", "3"], {
-                    "default": "Auto",
-                    "tooltip": "Auto uses Vision Analyzer count. Otherwise manually set how many audio files are connected (max 3).",
-                }),
-                "output_language": (["English", "Chinese"], {
-                    "default": "English",
-                    "tooltip": "The language the Minimax H3 system will receive the prompt in."
-                }),
-                "provider": (active_providers, {
-                    "default": default_choice,
-                    "tooltip": "LLM provider to use for text generation.",
-                }),
-                "temperature": ("FLOAT", {
-                    "default": 0.7, "min": 0.0, "max": 1.0, "step": 0.05
-                }),
-                "max_tokens": ("INT", {
-                    "default": 4096, "min": 256, "max": 8192, "step": 256
-                }),
-            },
-        }
+        return io.Schema(
+            node_id="H3_Promptor",
+            display_name="MiniMax H3 Promptor",
+            category="🧪AILab/🎬 MiniMax H3-Promptor",
+            inputs=[
+                io.Combo.Input("task_type", options=TASK_TYPE_OPTIONS, default=TASK_TYPE_OPTIONS[0], tooltip="Task format for MiniMax H3 (Text-to-Video, Image-to-Video, Ref2VA, etc.) or Auto detection based on reference media."),
+                io.String.Input("scene_direction", multiline=True, default="", tooltip="Optional director instructions & scene plot. E.g.: Start with <Picture 1> in a slow push-in, transition to <Picture 2> in the rain as the character turns to the camera and says: \"The time has come.\" (Leave empty for full AI creative freedom)"),
+                io.Float.Input("duration", default=5.0, min=4.0, max=15.0, step=0.5, tooltip="Target video duration in seconds (valid MiniMax H3 range: 4.0 - 15.0s)."),
+                io.String.Input("vision_context", multiline=True, force_input=True, default="", optional=True, tooltip="Connect the vision_context JSON output from the MiniMax H3 Vision node here."),
+                io.Combo.Input("reference_images", options=["Auto", "1", "2", "3", "4", "5", "6", "7", "8", "9"], default="Auto", optional=True, tooltip="Number of reference images. 'Auto' synchronizes dynamically with the Vision node (max 9)."),
+                io.Combo.Input("reference_videos", options=["Auto", "1", "2", "3"], default="Auto", optional=True, tooltip="Number of reference videos. 'Auto' synchronizes dynamically with the Vision node (max 3)."),
+                io.Combo.Input("reference_audios", options=["Auto", "1", "2", "3"], default="Auto", optional=True, tooltip="Number of reference audio tracks. 'Auto' synchronizes dynamically with the Vision node (max 3)."),
+                io.Combo.Input("output_language", options=["English", "Chinese"], default="English", optional=True, tooltip="Language for the final structured MiniMax H3 prompt (English or Chinese)."),
+                io.Combo.Input("provider", options=active_providers, default=default_choice, optional=True, tooltip="LLM provider used for Director reasoning and prompt synthesis."),
+                io.Float.Input("temperature", default=0.7, min=0.0, max=1.0, step=0.05, optional=True, tooltip="Sampling temperature for LLM text generation (0.0 = deterministic/strict, 1.0 = creative)."),
+                io.Int.Input("max_tokens", default=4096, min=256, max=8192, step=256, optional=True, tooltip="Maximum token limit for LLM generation response."),
+            ],
+            outputs=[
+                io.String.Output("prompt", display_name="PROMPT", tooltip="Formatted MiniMax H3 structured prompt ready to connect to MiniMax Sampler / Director."),
+                io.Float.Output("duration", display_name="DURATION", tooltip="Target video duration in seconds (direct pass-through for downstream Sampler/Audio nodes)."),
+                io.Int.Output("length", display_name="LENGTH", tooltip="Frame count at 24 fps, snapped up to the model's 17k+5 grid (124 = ~5s; trained range is ~124-362, longer is untested)"),
+            ],
+        )
 
-    RETURN_TYPES = ("STRING",)
-    RETURN_NAMES = ("prompt",)
-    FUNCTION = "generate_prompt"
-    CATEGORY = "🧪AILab/🎬 MiniMax H3-Promptor"
+    @classmethod
+    def execute(
+        cls,
+        task_type: str,
+        duration: float,
+        scene_direction: str = "",
+        description: str = "",
+        vision_context: str = "",
+        reference_images: str = "Auto",
+        reference_videos: str = "Auto",
+        reference_audios: str = "Auto",
+        output_language: str = "English",
+        provider: str = "",
+        temperature: float = 0.7,
+        max_tokens: int = 4096,
+        **kwargs
+    ) -> io.NodeOutput:
+        user_prompt = scene_direction if scene_direction != "" else description
+        if not user_prompt:
+            user_prompt = kwargs.get("scene_direction", "") or kwargs.get("description", "")
+        cleaned_prompt, dur, frames = cls.generate_prompt(
+            task_type=task_type,
+            description=user_prompt,
+            duration=duration,
+            vision_context=vision_context,
+            reference_images=reference_images,
+            reference_videos=reference_videos,
+            reference_audios=reference_audios,
+            output_language=output_language,
+            provider=provider,
+            temperature=temperature,
+            max_tokens=max_tokens,
+        )
+        return io.NodeOutput(cleaned_prompt, float(dur), int(frames))
 
+    RETURN_TYPES = ("STRING", "FLOAT", "INT")
+    RETURN_NAMES = ("prompt", "duration", "length")
+    OUTPUT_TOOLTIPS = (
+        "Formatted MiniMax H3 structured prompt ready to connect to MiniMax Sampler / Director.",
+        "Target video duration in seconds (direct pass-through for downstream Sampler/Audio nodes).",
+        "Frame count at 24 fps, snapped up to the model's 17k+5 grid (124 = ~5s; trained range is ~124-362, longer is untested)"
+    )
+
+    @classmethod
     def generate_prompt(
-        self,
+        cls,
         task_type: str,
         description: str,
         duration: float,
@@ -124,151 +154,28 @@ class H3_Promptor:
         max_tokens: int = 4096,
     ):
         """Generate a MiniMax H3 structured prompt using the two-stage director pipeline."""
-        try:
-            # Parse intelligent Auto media signature if present
-            ui_ref_images = 0 if reference_images == "Auto" else int(reference_images)
-            ui_ref_videos = 0 if reference_videos == "Auto" else int(reference_videos)
-            ui_ref_audios = 0 if reference_audios == "Auto" else int(reference_audios)
-            
-            image_count = ui_ref_images
-            has_video = ui_ref_videos > 0
-            has_audio = ui_ref_audios > 0
-            
-            parsed_vision_dict = None
-            available_tags = []
-            if vision_context:
-                import json
-                try:
-                    parsed_vision_dict = json.loads(vision_context)
-                    media_keys = parsed_vision_dict.get("_media_keys", [])
-                    img_count = sum(1 for k in media_keys if k.startswith("<Picture"))
-                    vid_count = sum(1 for k in media_keys if k.startswith("<Video"))
-                    aud_count = sum(1 for k in media_keys if k.startswith("<Audio"))
-                    
-                    image_count = max(ui_ref_images, img_count)
-                    has_video = (ui_ref_videos > 0) or (vid_count > 0)
-                    has_audio = (ui_ref_audios > 0) or (aud_count > 0)
-                        
-                    formatted_context = []
-                    for k in media_keys:
-                        v = parsed_vision_dict.get(k, "").strip()
-                        if v and "failed to analyze" not in v.lower():
-                            formatted_context.append(f"{k}: {v}")
-                            available_tags.append(k)
-                    if has_video: available_tags.append("<Video 1>")
-                    if has_audio: available_tags.append("<Audio 1>")
-                    vision_context = "\n".join(formatted_context)
-                
-                except json.JSONDecodeError:
-                    log_error("H3_Promptor: Failed to parse vision_context as JSON. Treating as raw string.")
+        from .pipeline_engine import execute_director_pipeline
+        result = execute_director_pipeline(
+            task_type=task_type,
+            description=description,
+            duration=duration,
+            vision_context=vision_context,
+            reference_images=reference_images,
+            reference_videos=reference_videos,
+            reference_audios=reference_audios,
+            output_language=output_language,
+            provider=provider,
+            temperature=temperature,
+            max_tokens=max_tokens,
+        )
+        return (result["final_prompt"], float(result["duration"]), int(result["length"]))
 
-            # 1. Detect Task Type
-            detected_type = TaskDetector.detect(
-                image_count=image_count,
-                has_video=has_video,
-                has_audio=has_audio,
-                user_override=task_type
-            )
-            task_desc = TaskDetector.get_task_description(detected_type)
-            
-            # 2. Get LLM provider
-            config_manager = get_config_manager()
-            provider_key = config_manager.find_provider_by_display_name(provider)
-            llm = _create_provider(provider_key, config_manager)
 
-            print(f"\n" + "="*80)
-            print(f"🎬 [H3-PROMPTOR] STARTING TWO-STAGE DIRECTING PIPELINE")
-            print(f"• Task Mode: {detected_type} ({task_desc}) | Target Duration: {duration:0.1f}s | Lang: {output_language}")
-            print(f"• Provider: {provider_key} ({llm.model}) | Media: {image_count} Image(s), Video: {has_video}, Audio: {has_audio}")
-            print("="*80)
+NODE_CLASS_MAPPINGS = {
+    "H3_Promptor": H3_Promptor,
+}
 
-            # ==========================================================
-            # STAGE 1: Blueprint & Global Vibe Planning
-            # ==========================================================
-            print(f"\n{'='*25} [STAGE 1/2] DIRECTING BLUEPRINT & GLOBAL VIBE {'='*25}")
-            stage1_sys = self.prompt_builder.build_blueprint_system_prompt(output_language=output_language)
-            stage1_user = self.prompt_builder.build_blueprint_user_message(
-                description=description,
-                duration=duration,
-                task_type=detected_type,
-                vision_context=vision_context,
-                output_language=output_language,
-                image_count=image_count,
-                has_video=has_video,
-                parsed_vision_dict=parsed_vision_dict
-            )
+NODE_DISPLAY_NAME_MAPPINGS = {
+    "H3_Promptor": "MiniMax H3 Promptor",
+}
 
-            res_stage1 = llm.chat(
-                system_prompt=stage1_sys,
-                user_message=stage1_user,
-                base64_images=None,
-                temperature=temperature,
-                max_tokens=max_tokens,
-            )
-
-            if not res_stage1.success:
-                err = f"[H3-Promptor Stage 1 Error] {res_stage1.error}"
-                log_error(err)
-                return (err,)
-
-            blueprint_text = res_stage1.content
-            print(blueprint_text)
-            print("="*80)
-
-            # ==========================================================
-            # STAGE 2: Cinematic Storyboard Generation
-            # ==========================================================
-            print(f"\n{'='*25} [STAGE 2/2] CINEMATIC STORYBOARD & DIALOGUE {'='*25}")
-            stage2_sys = self.prompt_builder.build_system_prompt(detected_type, duration=duration, output_language=output_language)
-            stage2_user = self.prompt_builder.build_storyboard_user_message(
-                blueprint=blueprint_text,
-                description=description,
-                duration=duration,
-                task_type=detected_type,
-                output_language=output_language,
-                available_tags=available_tags
-            )
-
-            res_stage2 = llm.chat(
-                system_prompt=stage2_sys,
-                user_message=stage2_user,
-                base64_images=None,
-                temperature=temperature,
-                max_tokens=max_tokens,
-            )
-
-            if not res_stage2.success:
-                err = f"[H3-Promptor Stage 2 Error] {res_stage2.error}"
-                log_error(err)
-                return (err,)
-
-            print(res_stage2.content)
-            print("="*80)
-
-            # ==========================================================
-            # STAGE 3: Deterministic Post-Processing & Official Assembly
-            # ==========================================================
-            subject_defs, valid_tags = self.prompt_builder.generate_subject_definitions(
-                image_count, has_video=has_video, has_audio=has_audio, parsed_vision_dict=parsed_vision_dict
-            )
-            alignment_inst = self.prompt_builder.generate_alignment_instruction(detected_type, duration, image_count)
-
-            cleaned_prompt = PostProcessor.clean(
-                res_stage2.content, 
-                detected_type, 
-                full_task_desc=task_desc,
-                subject_defs=subject_defs,
-                alignment_inst=alignment_inst,
-                duration=duration
-            )
-
-            print(f"\n{'#'*25} [FINAL ASSEMBLED MINIMAX PROMPT] {'#'*25}")
-            print(cleaned_prompt)
-            print("#"*80 + "\n")
-
-            return (cleaned_prompt,)
-
-        except Exception as e:
-            error_msg = f"[H3-Promptor Error] {str(e)}"
-            log_error(str(e))
-            return (error_msg,)
