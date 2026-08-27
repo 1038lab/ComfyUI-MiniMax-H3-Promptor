@@ -8,6 +8,7 @@
 - **Auto-Syncing JSON Catalog**: Directly synchronizes with `ComfyUI-QwenVL`'s `custom_models.json` (auto-maintained by its HuggingFace downloader) and `gguf_models.json`, requiring zero manual JSON editing.
 - **Opt-in & Zero Extra Bloat**: Pre-configured as disabled (`enabled: false`) by default in the Provider Settings panel, ensuring pure cloud/API users experience zero overhead.
 - **One-Click Connection Testing**: The Settings Panel `/minimax-h3/test_connection` endpoint automatically detects the local engine installation and reports catalog model count.
+<img width="640"  alt="qwenvl-cli" src="https://github.com/user-attachments/assets/37be3baf-2620-4df3-a186-ce6df3d9177c" />
 
 ### 🎬 Scene Direction & Creative Control Refinement (`H3_Promptor`)
 - **Renamed `description` to `scene_direction`**: Clearer semantic identity designating user plot instructions as the highest creative mandate.
@@ -19,6 +20,9 @@
 - **Dialogue & Voice Acting Tag Injection (`<d>[Language]...</d>`)**: Automatically extracts user-supplied speech/dialogue from descriptions and guarantees it is formatted as `<d>[Language]...</d>` and embedded into the `[Shot 1]` narrative timeline without duplicate nesting.
 - **Subject Shorthand Standardization**: Automatically normalizes standalone `S1`~`S20` mentions to the official MiniMax parenthesized format `(S1)`~`(S20)`.
 - **Media Filename Sanitization**: Automatically scrubs hallucinated raw media filenames (e.g. `image.png`, `video.mp4`) from final prompts.
+
+
+![ComfyUI MiniMax H3-Promptor](example_workflows/MiniMax-H3-Promptor.jpg)
 
 ### ⚡ Multi-Platform Thinking Mode Control (Reasoning/Thinking)
 - **Thinking Control Toggle (`Disable Thinking (Fast)`)**: Added a dedicated switch in the Settings Panel for OpenAI-compatible, Gemini, and Anthropic providers.
