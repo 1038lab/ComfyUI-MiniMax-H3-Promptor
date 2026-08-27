@@ -8,20 +8,19 @@ This project provides a robust, decoupled architecture separating **multimodal v
 
 ## What's New in V1.4.0 (2026/08/26)
 
-### ComfyUI-QwenVL (Local / GGUF) Integration, MiniMax H3 Guardrails & Scene Direction
+### Cross-Node Collaboration: Local Qwen & GGUF Integration via ComfyUI-QwenVL
 
-*   **ComfyUI-QwenVL (Local / GGUF) Support (`qwenvl`)**: Seamlessly connects to `ComfyUI-QwenVL` (or `llama-cpp`) to run local GGUF models for both multimodal vision analysis in `H3_Vision` and director scriptwriting in `H3_Promptor`.
-*   **Auto-Syncing JSON Catalog**: Directly loads models from `ComfyUI-QwenVL`'s `custom_models.json` (auto-updated by its HuggingFace downloader) and `gguf_models.json` with zero manual configuration.
-*   **Scene Direction & Creative Control**: Renamed to `scene_direction` with standard English production tooltips (`<Picture 1>`, transitions, `says: "..."`) for precise cinematic storytelling.
-*   **FL2VA Anchor Guardrails**: Guarantees First & Last Frame tasks strictly contain `picture 1` (0.00s opening frame) and `picture 2` (ending frame) alignment declarations, automatically injected if omitted by LLMs.
-*   **Dialogue `<d>[Language]...</d>` Auto-Injection**: Extracts user speech/dialogue from descriptions and ensures it is tagged and placed directly into the `[Shot 1]` narrative timeline without duplicate nesting.
-*   **Subject Shorthand Normalization**: Automatically standardizes standalone `S1`~`S20` mentions into official `(S1)`~`(S20)` parentheses.
-*   **Multi-Platform Thinking Mode Control**: Added `Disable Thinking (Fast)` switch in the Settings Panel for OpenAI-compatible, Gemini 2.5/3.x, and Claude providers to prevent token budget waste and timeouts.
-*   **Filename Sanitization**: Strips leaked raw file extensions (`.png`, `.jpg`, `.mp4`) to keep prompts pristine.
-*   **Unified `MiniMax H3 Vision` Node**: Replaces previous analyzer with `H3_Vision`, combining dynamic `io.Autogrow` pipeline input connectors (IMAGE, VIDEO, AUDIO) with in-node drag-and-drop uploads.
-*   **Drag-to-Reorder Media Pipeline**: Freeform card reordering in the Upload Area with strict category partitioning (`All Images -> All Videos -> All Audios`). Drag and drop cards (both connected and uploaded) to reorder `<Picture 1>`, `<Picture 2>`, `<Video 1>`, etc., seamlessly synchronized with backend tensor batching.
-*   **Live Upstream Media Previews**: Connected inputs automatically resolve and display real image/video thumbnails and clean labels with `linked` badges.
-*   **Promptor `length` Output**: `H3_Promptor` now outputs a calculated `length` (INT) frame count aligned with MiniMax H3's model requirement: `max(5, round(duration * 24))` aligned to `% 17 == 5`.
+V1.4.0 marks our first exploratory milestone in **cross-node ecosystem collaboration**: seamlessly bridging **`Comfyui-Minimax-H3-Promptor`** with **`ComfyUI-QwenVL`**.
+
+By pairing these two custom nodes, you can now run local Qwen multimodal & LLM models (including lightweight quantized `.gguf` weights) completely offline at zero API cost—handling visual perception in `H3_Vision` and cinematic directing in `H3_Promptor`.
+
+*   **Prerequisite**: Requires [ComfyUI-QwenVL](https://github.com/1038lab/ComfyUI-QwenVL) installed in your `custom_nodes` folder. Models downloaded via QwenVL's downloader and catalog JSONs are automatically synchronized with zero manual configuration.
+*   **Modular Node Collaboration Vision**: This is our first experiment with cross-node synergy. If well-received by the community, we plan to expand collaborative bridges with more specialized nodes, unlocking greater flexibility and modular extensibility across ComfyUI workflows.
+
+#### Key Highlights & Enhancements
+*   **Unified `H3_Vision` Node**: Combines dynamic `Autogrow` media connectors (Image, Video, Audio) with drag-to-reorder card galleries and live previews.
+*   **Prompt Guardrails & Scene Direction**: Auto-injected FL2VA first/last frame anchors, `<d>[Language]...</d>` dialogue extraction, and `(S1)`~`(S20)` shorthand standardization.
+*   **Thinking Mode Control**: Added instant `Disable Thinking (Fast)` toggles in Settings for Gemini, OpenAI-compatible, and Claude providers to eliminate latency and token overhead.
 
 **[Read the full v1.4.0 Release Notes and Detailed Features here (updates.md)](updates.md#v140-20260826)**
 
