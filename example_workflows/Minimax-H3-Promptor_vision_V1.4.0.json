@@ -1,95 +1,101 @@
 {
-  "id": "84d65322-5b4c-471b-b050-62b4686338f4",
+  "id": "320c07d3-75ef-4a69-8dde-c21abbe359b3",
   "revision": 0,
-  "last_node_id": 179,
-  "last_link_id": 277,
+  "last_node_id": 60,
+  "last_link_id": 121,
   "nodes": [
     {
-      "id": 178,
-      "type": "H3_Promptor",
+      "id": 50,
+      "type": "PreviewAny",
       "pos": [
-        767.57437799253,
-        4823.481004269322
+        1430.353203226793,
+        477.815630994663
       ],
       "size": [
-        400,
-        344
+        734.5987473677196,
+        511.0291181546298
       ],
       "flags": {},
-      "order": 6,
+      "order": 5,
       "mode": 0,
       "inputs": [
         {
-          "name": "vision_context",
-          "shape": 7,
-          "type": "STRING",
-          "link": 277
+          "name": "source",
+          "type": "*",
+          "link": 116
         }
       ],
       "outputs": [
         {
-          "name": "PROMPT",
+          "name": "STRING",
           "type": "STRING",
-          "links": [
-            271
-          ]
-        },
-        {
-          "name": "DURATION",
-          "type": "FLOAT",
-          "links": null
-        },
-        {
-          "name": "LENGTH",
-          "type": "INT",
           "links": null
         }
       ],
       "properties": {
-        "Node name for S&R": "H3_Promptor",
+        "cnr_id": "comfy-core",
+        "ver": "0.33.3",
+        "Node name for S&R": "PreviewAny",
         "ue_properties": {
           "widget_ue_connectable": {},
           "input_ue_unconnectable": {},
           "version": "7.8"
         }
       },
-      "widgets_values": [
-        "Auto",
-        "",
-        5,
-        "Auto",
-        "Auto",
-        "Auto",
-        "English",
-        "qwen3.5-4b_q4_k_m (Huihui-Qwen3.5-4B-abliterated.Q4_K_M.gguf)",
-        0.7,
-        4096
-      ],
-      "widgets_values_named": {
-        "task_type": "Auto",
-        "scene_direction": "",
-        "duration": 5,
-        "reference_images": "Auto",
-        "reference_videos": "Auto",
-        "reference_audios": "Auto",
-        "output_language": "English",
-        "provider": "qwen3.5-4b_q4_k_m (Huihui-Qwen3.5-4B-abliterated.Q4_K_M.gguf)",
-        "temperature": 0.7,
-        "max_tokens": 4096
-      },
-      "color": "#221f33ff",
-      "bgcolor": "#3b3850ff"
+      "widgets_values": [],
+      "widgets_values_named": {}
     },
     {
-      "id": 176,
-      "type": "H3_Vision",
+      "id": 51,
+      "type": "AILab_ImagePreview",
       "pos": [
-        -159.0344837331694,
-        4823.481004269322
+        1433.8670789714224,
+        1038.322988749124
       ],
       "size": [
-        440,
-        667
+        736.4377294034095,
+        601.9754059803356
+      ],
+      "flags": {},
+      "order": 6,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "image",
+          "type": "IMAGE",
+          "link": 117
+        }
+      ],
+      "outputs": [
+        {
+          "name": "IMAGE",
+          "type": "IMAGE",
+          "links": null
+        }
+      ],
+      "properties": {
+        "cnr_id": "comfyui-rmbg",
+        "ver": "a1ca256ce5ef3d2d990935415bad76c4269aa80d",
+        "Node name for S&R": "AILab_ImagePreview",
+        "ue_properties": {
+          "widget_ue_connectable": {},
+          "input_ue_unconnectable": {},
+          "version": "7.8"
+        }
+      },
+      "color": "#2e3e57",
+      "bgcolor": "#4b5b73"
+    },
+    {
+      "id": 60,
+      "type": "H3_Vision",
+      "pos": [
+        551.1069822574177,
+        477.815630994663
+      ],
+      "size": [
+        862.055257671565,
+        854
       ],
       "flags": {},
       "order": 4,
@@ -100,14 +106,14 @@
           "name": "ref_images.image_0",
           "shape": 7,
           "type": "IMAGE",
-          "link": 273
+          "link": 118
         },
         {
           "label": "image_1",
           "name": "ref_images.image_1",
           "shape": 7,
           "type": "IMAGE",
-          "link": 274
+          "link": 119
         },
         {
           "label": "image_2",
@@ -121,7 +127,7 @@
           "name": "ref_videos.video_0",
           "shape": 7,
           "type": "VIDEO",
-          "link": 275
+          "link": 120
         },
         {
           "label": "video_1",
@@ -135,7 +141,7 @@
           "name": "ref_audios.audio_0",
           "shape": 7,
           "type": "AUDIO",
-          "link": 276
+          "link": 121
         },
         {
           "label": "audio_1",
@@ -150,13 +156,15 @@
           "name": "VISION_CONTEXT",
           "type": "STRING",
           "links": [
-            272
+            116
           ]
         },
         {
           "name": "REF_IMAGES",
           "type": "IMAGE",
-          "links": null
+          "links": [
+            117
+          ]
         }
       ],
       "properties": {
@@ -170,38 +178,38 @@
       "widgets_values": [
         "Subject / Identity",
         "Comprehensive",
-        "",
-        "English",
-        "qwen3.5-4b_q4_k_m (Huihui-Qwen3.5-4B-abliterated.Q4_K_M.gguf)",
+        "{\"media\":[[\"slot_1\",{\"name\":\"12.jpg\",\"kind\":\"image\"}],[\"slot_2\",{\"name\":\"sing_1.mp4\",\"kind\":\"video\"}]],\"order\":[\"upload:slot_1\",\"upload:slot_2\"],\"linked_state\":{}}",
+        "agnes-ai (agnes-2.5-flash)",
         0.2,
         2048,
-        "",
+        "English",
+        "<Video 1>:",
         ""
       ],
       "widgets_values_named": {
         "global_image_mode": "Subject / Identity",
         "global_video_mode": "Comprehensive",
-        "_media_state": "",
-        "output_language": "English",
-        "provider": "qwen3.5-4b_q4_k_m (Huihui-Qwen3.5-4B-abliterated.Q4_K_M.gguf)",
-        "temperature": 0.2,
-        "max_tokens": 2048,
-        "custom_prompt_override": "",
+        "_media_state": "{\"media\":[[\"slot_1\",{\"name\":\"12.jpg\",\"kind\":\"image\"}],[\"slot_2\",{\"name\":\"sing_1.mp4\",\"kind\":\"video\"}]],\"order\":[\"upload:slot_1\",\"upload:slot_2\"],\"linked_state\":{}}",
+        "output_language": "agnes-ai (agnes-2.5-flash)",
+        "provider": 0.2,
+        "temperature": 2048,
+        "max_tokens": "English",
+        "custom_prompt_override": "<Video 1>:",
         "gh_vision_panel": ""
       },
       "color": "#221f33ff",
       "bgcolor": "#3b3850ff"
     },
     {
-      "id": 48,
-      "type": "AILab_LoadImageSimple",
+      "id": 37,
+      "type": "AILab_LoadImage",
       "pos": [
-        -690.8773044947463,
-        4823.481004269322
+        -426.2340318913841,
+        477.815630994663
       ],
       "size": [
-        520.3261401846053,
-        461.2338839631266
+        308.19901361694326,
+        726.3996
       ],
       "flags": {},
       "order": 0,
@@ -212,7 +220,7 @@
           "name": "IMAGE",
           "type": "IMAGE",
           "links": [
-            273
+            118
           ]
         },
         {
@@ -234,7 +242,7 @@
       "properties": {
         "cnr_id": "comfyui-rmbg",
         "ver": "a1ca256ce5ef3d2d990935415bad76c4269aa80d",
-        "Node name for S&R": "AILab_LoadImageSimple",
+        "Node name for S&R": "AILab_LoadImage",
         "ue_properties": {
           "widget_ue_connectable": {},
           "input_ue_unconnectable": {},
@@ -243,27 +251,37 @@
       },
       "widgets_values": [
         "",
-        "14.webp",
+        "117690298.webp",
+        "lanczos",
+        0,
+        1,
+        "longest_side",
+        0,
         "image"
       ],
       "widgets_values_named": {
         "image_path_or_URL": "",
-        "image": "14.webp",
+        "image": "117690298.webp",
+        "upscale_method": "lanczos",
+        "megapixels": 0,
+        "scale_by": 1,
+        "resize_mode": "longest_side",
+        "size": 0,
         "upload": "image"
       },
       "color": "#2e3e57",
       "bgcolor": "#4b5b73"
     },
     {
-      "id": 46,
-      "type": "AILab_LoadImageSimple",
+      "id": 44,
+      "type": "AILab_LoadImage",
       "pos": [
-        -1031.5229321866434,
-        4823.481004269322
+        -100.84405497663056,
+        477.815630994663
       ],
       "size": [
-        329.1289471149254,
-        461.2338839631266
+        317.5691106384277,
+        726.3996000000002
       ],
       "flags": {},
       "order": 1,
@@ -274,7 +292,7 @@
           "name": "IMAGE",
           "type": "IMAGE",
           "links": [
-            274
+            119
           ]
         },
         {
@@ -296,7 +314,7 @@
       "properties": {
         "cnr_id": "comfyui-rmbg",
         "ver": "a1ca256ce5ef3d2d990935415bad76c4269aa80d",
-        "Node name for S&R": "AILab_LoadImageSimple",
+        "Node name for S&R": "AILab_LoadImage",
         "ue_properties": {
           "widget_ue_connectable": {},
           "input_ue_unconnectable": {},
@@ -305,27 +323,37 @@
       },
       "widgets_values": [
         "",
-        "Architecture.png",
+        "94419496.jpeg",
+        "lanczos",
+        0,
+        1,
+        "longest_side",
+        0,
         "image"
       ],
       "widgets_values_named": {
         "image_path_or_URL": "",
-        "image": "Architecture.png",
+        "image": "94419496.jpeg",
+        "upscale_method": "lanczos",
+        "megapixels": 0,
+        "scale_by": 1,
+        "resize_mode": "longest_side",
+        "size": 0,
         "upload": "image"
       },
       "color": "#2e3e57",
       "bgcolor": "#4b5b73"
     },
     {
-      "id": 179,
-      "type": "LoadAudio",
+      "id": 55,
+      "type": "LoadVideo",
       "pos": [
-        -453.3499924351411,
-        5354.481004269322
+        233.9160189596074,
+        477.815630994663
       ],
       "size": [
-        282.798828125,
-        136
+        300,
+        745.8084909539473
       ],
       "flags": {},
       "order": 2,
@@ -333,60 +361,16 @@
       "inputs": [],
       "outputs": [
         {
-          "name": "AUDIO",
-          "type": "AUDIO",
+          "name": "VIDEO",
+          "type": "VIDEO",
           "links": [
-            276
+            120
           ]
         }
       ],
       "properties": {
         "cnr_id": "comfy-core",
         "ver": "0.33.3",
-        "Node name for S&R": "LoadAudio",
-        "ue_properties": {
-          "widget_ue_connectable": {},
-          "input_ue_unconnectable": {},
-          "version": "7.8"
-        }
-      },
-      "widgets_values": [
-        "2022-02-20 15-03-08.mkv",
-        null,
-        null
-      ],
-      "widgets_values_named": {
-        "audio": "2022-02-20 15-03-08.mkv",
-        "upload": null
-      }
-    },
-    {
-      "id": 169,
-      "type": "LoadVideo",
-      "pos": [
-        -784.2187784817974,
-        5342.881152199356
-      ],
-      "size": [
-        313.54222717449954,
-        544.3133407617493
-      ],
-      "flags": {},
-      "order": 3,
-      "mode": 0,
-      "inputs": [],
-      "outputs": [
-        {
-          "name": "VIDEO",
-          "type": "VIDEO",
-          "links": [
-            275
-          ]
-        }
-      ],
-      "properties": {
-        "cnr_id": "comfy-core",
-        "ver": "0.30.2",
         "Node name for S&R": "LoadVideo",
         "ue_properties": {
           "widget_ue_connectable": {},
@@ -404,160 +388,112 @@
       }
     },
     {
-      "id": 174,
-      "type": "PreviewAny",
+      "id": 54,
+      "type": "LoadAudio",
       "pos": [
-        292.4821968438023,
-        4823.481004269322
+        233.9160189596074,
+        1298.3472023660674
       ],
       "size": [
-        464.9586466031851,
-        750.0891604142635
+        300,
+        136
       ],
       "flags": {},
-      "order": 5,
+      "order": 3,
       "mode": 0,
-      "inputs": [
-        {
-          "name": "source",
-          "type": "*",
-          "link": 272
-        }
-      ],
+      "inputs": [],
       "outputs": [
         {
-          "name": "STRING",
-          "type": "STRING",
+          "name": "AUDIO",
+          "type": "AUDIO",
           "links": [
-            277
+            121
           ]
         }
       ],
       "properties": {
         "cnr_id": "comfy-core",
-        "ver": "0.30.2",
-        "Node name for S&R": "PreviewAny",
+        "ver": "0.33.3",
+        "Node name for S&R": "LoadAudio",
         "ue_properties": {
           "widget_ue_connectable": {},
           "input_ue_unconnectable": {},
           "version": "7.8"
         }
       },
-      "widgets_values": [],
-      "widgets_values_named": {}
-    },
-    {
-      "id": 175,
-      "type": "PreviewAny",
-      "pos": [
-        1179.0910585695017,
-        4823.481004269322
+      "widgets_values": [
+        "WomanVoice9Sec.mp3",
+        null,
+        null
       ],
-      "size": [
-        663.2268787563894,
-        912.1076267692188
-      ],
-      "flags": {},
-      "order": 7,
-      "mode": 0,
-      "inputs": [
-        {
-          "name": "source",
-          "type": "*",
-          "link": 271
-        }
-      ],
-      "outputs": [
-        {
-          "name": "STRING",
-          "type": "STRING",
-          "links": null
-        }
-      ],
-      "properties": {
-        "cnr_id": "comfy-core",
-        "ver": "0.30.2",
-        "Node name for S&R": "PreviewAny",
-        "ue_properties": {
-          "widget_ue_connectable": {},
-          "input_ue_unconnectable": {},
-          "version": "7.8"
-        }
-      },
-      "widgets_values": [],
-      "widgets_values_named": {}
+      "widgets_values_named": {
+        "audio": "WomanVoice9Sec.mp3",
+        "upload": null
+      }
     }
   ],
   "links": [
     [
-      271,
-      178,
+      116,
+      60,
       0,
-      175,
-      0,
-      "STRING"
-    ],
-    [
-      272,
-      176,
-      0,
-      174,
+      50,
       0,
       "STRING"
     ],
     [
-      273,
-      48,
-      0,
-      176,
+      117,
+      60,
+      1,
+      51,
       0,
       "IMAGE"
     ],
     [
-      274,
-      46,
+      118,
+      37,
       0,
-      176,
+      60,
+      0,
+      "IMAGE"
+    ],
+    [
+      119,
+      44,
+      0,
+      60,
       1,
       "IMAGE"
     ],
     [
-      275,
-      169,
+      120,
+      55,
       0,
-      176,
+      60,
       3,
       "VIDEO"
     ],
     [
-      276,
-      179,
+      121,
+      54,
       0,
-      176,
+      60,
       5,
       "AUDIO"
-    ],
-    [
-      277,
-      174,
-      0,
-      178,
-      0,
-      "STRING"
     ]
   ],
   "groups": [],
   "config": {},
   "extra": {
     "ue_links": [],
+    "links_added_by_ue": [],
     "ds": {
-      "scale": 1.0247184822109252,
+      "scale": 0.8264462809917359,
       "offset": [
-        1113.5911318446967,
-        -4564.340694374261
+        614.8580626021992,
+        -86.60455367893849
       ]
     },
-    "links_added_by_ue": [],
     "frontendVersion": "1.49.6",
     "VHS_latentpreview": false,
     "VHS_latentpreviewrate": 0,
