@@ -1,5 +1,42 @@
 # ComfyUI-Minimax-H3-Promptor Update Log
+---
 
+## v1.4.0 (2026/08/26)
+
+### 🤖 ComfyUI-QwenVL (Local / GGUF) Integration (`qwenvl`)
+- **Seamless Local Engine Bridge**: Connects directly to `ComfyUI-QwenVL` (or `llama-cpp`) to run local GGUF models for both multimodal visual analysis in `H3_Vision` and director storyboard reasoning in `H3_Promptor`.
+- **Auto-Syncing JSON Catalog**: Directly synchronizes with `ComfyUI-QwenVL`'s `custom_models.json` (auto-maintained by its HuggingFace downloader) and `gguf_models.json`, requiring zero manual JSON editing.
+- **Opt-in & Zero Extra Bloat**: Pre-configured as disabled (`enabled: false`) by default in the Provider Settings panel, ensuring pure cloud/API users experience zero overhead.
+- **One-Click Connection Testing**: The Settings Panel `/minimax-h3/test_connection` endpoint automatically detects the local engine installation and reports catalog model count.
+
+### 🎬 Scene Direction & Creative Control Refinement (`H3_Promptor`)
+- **Renamed `description` to `scene_direction`**: Clearer semantic identity designating user plot instructions as the highest creative mandate.
+- **Standard English Production Guidance**: Included an instructive English demonstration tooltip showing reference usage (`<Picture 1>`, `<Picture 2>`), transitions, and dialogue (`says: "..."`) while keeping the default input completely empty for AI creative freedom.
+- **Full Backward Compatibility**: Seamlessly accepts both `scene_direction` and legacy `description` inputs from existing saved workflows.
+
+### 🛡️ MiniMax H3 Official Prompt Guardrails (PostProcessor)
+- **FL2VA Picture Anchor Guardrail**: Guarantees that First & Last Frame tasks (FL2VA) strictly contain `picture 1` (0.00s opening frame) and `picture 2` (ending frame) alignment declarations. If omitted by the LLM, they are automatically injected in English/Chinese to prevent interpolation failures.
+- **Dialogue & Voice Acting Tag Injection (`<d>[Language]...</d>`)**: Automatically extracts user-supplied speech/dialogue from descriptions and guarantees it is formatted as `<d>[Language]...</d>` and embedded into the `[Shot 1]` narrative timeline without duplicate nesting.
+- **Subject Shorthand Standardization**: Automatically normalizes standalone `S1`~`S20` mentions to the official MiniMax parenthesized format `(S1)`~`(S20)`.
+- **Media Filename Sanitization**: Automatically scrubs hallucinated raw media filenames (e.g. `image.png`, `video.mp4`) from final prompts.
+
+### ⚡ Multi-Platform Thinking Mode Control (Reasoning/Thinking)
+- **Thinking Control Toggle (`Disable Thinking (Fast)`)**: Added a dedicated switch in the Settings Panel for OpenAI-compatible, Gemini, and Anthropic providers.
+- **SiliconFlow & DeepSeek / Qwen3 / GLM-5**: Injects `"enable_thinking": False` into API request payloads, preventing token budget exhaustion and timeouts.
+- **Google Gemini (2.5 / 3.x / Flash)**: Injects `"thinkingConfig": {"thinkingBudget": 0}` to bypass thinking chains and output production-ready prompts instantly.
+- **Anthropic Claude**: Preserves native zero-thinking standard mode, allowing full temperature customization.
+- **Ollama**: Dynamic UI hides the toggle for Ollama, preventing 400 Bad Request errors while sanitizing `<think>` tags via post-processing.
+
+### 🔌 MiniMax H3 Vision
+- **Input Connector Support**: Integrated `H3_Vision` node featuring `io.Autogrow` input connectors for IMAGE, VIDEO, and AUDIO. Pipeline media from other nodes directly into the Vision node while retaining full drag & drop upload functionality.
+- **Drag-to-Reorder Media Pipeline**: Freeform card reordering in the Upload Area with strict category partitioning (`All Images -> All Videos -> All Audios`). Drag and drop cards (both connected and uploaded) to reorder `<Picture 1>`, `<Picture 2>`, `<Video 1>`, etc., seamlessly synchronized with backend tensor batching.
+- **Live Upstream Media Previews**: Connected inputs automatically display actual image/video thumbnails and clean labels with `🔗 linked` badges.
+- **Port Management**: Automatically trims excess unused empty input slots when media capacity is reached (9 images, 3 videos, 3 audios).
+
+### 📐 Promptor Length Output
+- **New `length` output (INT)**: `H3_Promptor` node outputs a calculated `length` value using the model-required frame alignment formula: `max(5, round(duration × 24))` aligned to `% 17 == 5`.
+
+---
 ## V1.3.0 (2026/08/18)
 
 ### (Hollywood AI Director & Full-Reference Architecture)
