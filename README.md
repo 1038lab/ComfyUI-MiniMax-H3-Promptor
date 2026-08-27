@@ -4,7 +4,7 @@ A powerful, node-based automation suite for generating cinema-production-grade p
 
 This project provides a robust, decoupled architecture separating **multimodal visual analysis** from pure **text-based prompt structuring**, allowing for extreme customizability, precise scene description, and low API operating costs.
 
-![ComfyUI MiniMax H3-Promptor](example_workflows/MiniMax-H3-Promptor.jpg)
+![ComfyUI MiniMax H3-Promptor](example_workflows/Minimax-H3-Promptor_vision_V1.4.0。jpg)
 
 ## What's New in V1.4.0 (2026/08/26)
 
