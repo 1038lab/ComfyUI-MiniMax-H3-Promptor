@@ -1,26 +1,51 @@
-__version__ = "1.3.0"
+import importlib
+import pkgutil
+import sys
+from pathlib import Path
 
-from .py.h3_promptor import H3_Promptor
-from .py.h3_vision_analyzer import H3_Vision_Analyzer
+__repo_name__ = "ComfyUI-Minimax-H3-Promptor"
+__version__ = "1.4.0"
 
-NODE_CLASS_MAPPINGS = {
-    "H3_Promptor": H3_Promptor,
-    "H3_Vision_Analyzer": H3_Vision_Analyzer,
-}
+# Locate current and node directories
+current_dir = Path(__file__).parent
+nodes_dir = current_dir / "py"
 
-NODE_DISPLAY_NAME_MAPPINGS = {
-    "H3_Promptor": "MiniMax H3 Promptor",
-    "H3_Vision_Analyzer": "MiniMax H3 Vision Analyzer",
-}
+# Ensure directories are in sys.path
+for path in [current_dir, nodes_dir]:
+    if str(path) not in sys.path:
+        sys.path.insert(0, str(path))
 
+# Initialize node mappings
+NODE_CLASS_MAPPINGS = {}
+NODE_DISPLAY_NAME_MAPPINGS = {}
 WEB_DIRECTORY = "./web"
+
+
+def load_nodes():
+    """Automatically discover and load node definitions from the py directory."""
+    if not nodes_dir.exists():
+        return
+
+    for (_, module_name, _) in pkgutil.iter_modules([str(nodes_dir)]):
+        if module_name.startswith("__"):
+            continue
+        try:
+            rel_import = f".py.{module_name}" if __package__ else f"py.{module_name}"
+            module = importlib.import_module(rel_import, package=__package__)
+            if hasattr(module, "NODE_CLASS_MAPPINGS"):
+                NODE_CLASS_MAPPINGS.update(module.NODE_CLASS_MAPPINGS)
+            if hasattr(module, "NODE_DISPLAY_NAME_MAPPINGS"):
+                NODE_DISPLAY_NAME_MAPPINGS.update(module.NODE_DISPLAY_NAME_MAPPINGS)
+        except Exception as e:
+            print(f"[{__repo_name__}] Error loading {module_name}: {e}")
+
+
+# Load all nodes
+load_nodes()
 
 __all__ = ["NODE_CLASS_MAPPINGS", "NODE_DISPLAY_NAME_MAPPINGS", "WEB_DIRECTORY"]
 
-# Register backend API routes 
-from .py import server_routes
-
-print(
-    f"\033[34m[MiniMax-H3-Promptor]\033[0m v\033[93m{__version__}\033[0m | "
-    f"\033[93m{len(NODE_CLASS_MAPPINGS)} nodes\033[0m \033[92mLoaded\033[0m"
-)
+print(f'\033[36m[{__repo_name__}]\033[0m v'
+      f'\033[93m{__version__}\033[0m | '
+      f'\033[37m{len(NODE_CLASS_MAPPINGS)} nodes\033[0m '
+      f'\033[92mLoaded\033[0m')
