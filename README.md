@@ -1,4 +1,4 @@
-# 🎬 ComfyUI MiniMax H3-Promptor
+# ComfyUI MiniMax H3-Promptor
 
 A powerful, node-based automation suite for generating cinema-production-grade prompts explicitly formatted for the **MiniMax H3 Video Generation System**.
 
@@ -6,20 +6,40 @@ This project provides a robust, decoupled architecture separating **multimodal v
 
 ![ComfyUI MiniMax H3-Promptor](example_workflows/MiniMax-H3-Promptor.jpg)
 
+## What's New in V1.4.0 (2026/08/26)
+
+### ComfyUI-QwenVL (Local / GGUF) Integration, MiniMax H3 Guardrails & Scene Direction
+
+*   **ComfyUI-QwenVL (Local / GGUF) Support (`qwenvl`)**: Seamlessly connects to `ComfyUI-QwenVL` (or `llama-cpp`) to run local GGUF models for both multimodal vision analysis in `H3_Vision` and director scriptwriting in `H3_Promptor`.
+*   **Auto-Syncing JSON Catalog**: Directly loads models from `ComfyUI-QwenVL`'s `custom_models.json` (auto-updated by its HuggingFace downloader) and `gguf_models.json` with zero manual configuration.
+*   **Scene Direction & Creative Control**: Renamed to `scene_direction` with standard English production tooltips (`<Picture 1>`, transitions, `says: "..."`) for precise cinematic storytelling.
+*   **FL2VA Anchor Guardrails**: Guarantees First & Last Frame tasks strictly contain `picture 1` (0.00s opening frame) and `picture 2` (ending frame) alignment declarations, automatically injected if omitted by LLMs.
+*   **Dialogue `<d>[Language]...</d>` Auto-Injection**: Extracts user speech/dialogue from descriptions and ensures it is tagged and placed directly into the `[Shot 1]` narrative timeline without duplicate nesting.
+*   **Subject Shorthand Normalization**: Automatically standardizes standalone `S1`~`S20` mentions into official `(S1)`~`(S20)` parentheses.
+*   **Multi-Platform Thinking Mode Control**: Added `Disable Thinking (Fast)` switch in the Settings Panel for OpenAI-compatible, Gemini 2.5/3.x, and Claude providers to prevent token budget waste and timeouts.
+*   **Filename Sanitization**: Strips leaked raw file extensions (`.png`, `.jpg`, `.mp4`) to keep prompts pristine.
+*   **Unified `MiniMax H3 Vision` Node**: Replaces previous analyzer with `H3_Vision`, combining dynamic `io.Autogrow` pipeline input connectors (IMAGE, VIDEO, AUDIO) with in-node drag-and-drop uploads.
+*   **Drag-to-Reorder Media Pipeline**: Freeform card reordering in the Upload Area with strict category partitioning (`All Images -> All Videos -> All Audios`). Drag and drop cards (both connected and uploaded) to reorder `<Picture 1>`, `<Picture 2>`, `<Video 1>`, etc., seamlessly synchronized with backend tensor batching.
+*   **Live Upstream Media Previews**: Connected inputs automatically resolve and display real image/video thumbnails and clean labels with `linked` badges.
+*   **Promptor `length` Output**: `H3_Promptor` now outputs a calculated `length` (INT) frame count aligned with MiniMax H3's model requirement: `max(5, round(duration * 24))` aligned to `% 17 == 5`.
+
+**[Read the full v1.4.0 Release Notes and Detailed Features here (updates.md)](updates.md#v140-20260826)**
+
+
 ## V1.3.0 (2026/08/18) 
 
-### (Hollywood AI Director & Full-Reference Architecture)
+### Hollywood AI Director & Full-Reference Architecture
 
-*   **🎬 Two-Stage Hollywood AI Director & Screenwriter Engine**: Transforms prompt generation into an authentic film production workflow (Stage 1: Director Blueprint & Global Vibe -> Stage 2: Cinematic Storyboard & Dialogue), generating evenly paced 4-beat timelines covering up to 15.0s.
-*   **🗣️ Official MiniMax Dialogue & Voice Acting Syntax**: Native support for `<Subject N> (SN) [emotion] says: <d>[Language] "..."</d>` for vivid character voices and live acting.
-*   **👑 Custom Prompt as Supreme Mandate**: User creative wishes are prioritized as the highest directive, orchestrating all uploaded cast, vehicles, and props to execute your vision.
-*   **🖼️ All-New Vision Analyzer V2 Drop-Zone Panel**: Native HTML/JS drag-and-drop panel right on the node surface; original images pass through zero-deformation `OUTPUT_IS_LIST` list expansion.
-*   **⚙️ Pipeline Polish & Fine-Tuning**: Alphabetical provider sorting with smart default pinning, customizable `Max Batch Images` sub-batching, chunk positional fallback, and regex word-boundary entity recognition.
+*   **Two-Stage Hollywood AI Director & Screenwriter Engine**: Transforms prompt generation into an authentic film production workflow (Stage 1: Director Blueprint & Global Vibe -> Stage 2: Cinematic Storyboard & Dialogue), generating evenly paced 4-beat timelines covering up to 15.0s.
+*   **Official MiniMax Dialogue & Voice Acting Syntax**: Native support for `<Subject N> (SN) [emotion] says: <d>[Language] "..."</d>` for vivid character voices and live acting.
+*   **Custom Prompt as Supreme Mandate**: User creative wishes are prioritized as the highest directive, orchestrating all uploaded cast, vehicles, and props to execute your vision.
+*   **All-New Vision Analyzer V2 Drop-Zone Panel**: Native HTML/JS drag-and-drop panel right on the node surface; original images pass through zero-deformation `OUTPUT_IS_LIST` list expansion.
+*   **Pipeline Polish & Fine-Tuning**: Alphabetical provider sorting with smart default pinning, customizable `Max Batch Images` sub-batching, chunk positional fallback, and regex word-boundary entity recognition.
 
-👉 **[Read the full v1.3.0 Release Notes and Detailed Features here (updates.md)](updates.md#v130-20260818)**
+**[Read the full v1.3.0 Release Notes and Detailed Features here (updates.md)](updates.md#v130-20260818)**
 
 
-## 🎉 What's New in V1.2.0 (Settings Hub & Core Architecture Overhaul)
+## What's New in V1.2.0 (Settings Hub & Core Architecture Overhaul)
 
 *   **Global Native Settings Panel**: Manage all LLM providers (including API Keys and Hot-Reload toggles) seamlessly via the native ComfyUI Gear Icon settings.
 *   **L2VA Mode & I2VA Frame Anchoring**: Added strict zero-second first-frame anchoring, and the new reverse L2VA mode to conclude exactly on a target pose.
@@ -27,11 +47,11 @@ This project provides a robust, decoupled architecture separating **multimodal v
 *   **Audio-First Token Syncing**: Introduces dedicated `<Audio N>` tracking tags and `(Sx)` conversational ID parsing to align lip movements properly to sound inputs.
 <img width="50%" alt="minimax-h3-setting" src="https://github.com/user-attachments/assets/81eda3f3-084c-4ac9-9e99-446afa1009dc" />
 
-👉 **[Read the full v1.2.0 Release Notes and Bug Fixes here (updates.md)](updates.md#v120-20260813)**
+**[Read the full v1.2.0 Release Notes and Bug Fixes here (updates.md)](updates.md#v120-20260813)**
 
 ---
 
-## 🎉 Previous Updates: V1.1.0 (Refined Architecture)
+## Previous Updates: V1.1.0 (Refined Architecture)
 
 *   **Zero-Hallucination Inline Tagging**: The Prompt LLM now natively embeds `<Picture X>` references directly inside the narrative action lines, guaranteeing 100% compliance with official MiniMax tag-binding requirements.
 *   **Sequential Multi-Modal Processing**: Upgraded the Vision Analyzer to process inputs sequentially. This eliminates Multi-Modal LLM context bleeding and guarantees proxy API limits are never exceeded.
@@ -41,35 +61,47 @@ This project provides a robust, decoupled architecture separating **multimodal v
 
 ---
 
-## 🌟 The V1.0.0 Decoupled Architecture
+## Core Architecture & Node Reference
 
 The pipeline consists of two nodes working in tandem to handle extreme complexity without duplicating LLM vision costs:
 
-### 1. `H3_Vision_Analyzer` 👁️
-A highly configurable multimodal analysis engine. This node acts as your virtual Director of Photography, analyzing input imagery and video based on explicit presets.
-*   **Infinite Dynamic Scaling**: Upgraded to ComfyAPI v3 `io.Autogrow`. You are no longer limited to 4 images. Connect as many Images and Videos as you want seamlessly.
-*   **Targeted Custom Overrides**: Use the `custom_prompt_override` box to type rules like `<Picture 2>: Focus entirely on the background`. It will surgically override the global mode for that exact frame!
-*   **Invisible Heavy VRAM Management**: Automatically detects when you are using local models like `Ollama` and safely unloads them behind the scenes to preserve VRAM for the actual H3 video generation.
-*   **Multilingual Output**: Choose between English and Chinese for the analysis output language.
-*   **Outputs**: Produces a structured JSON-backed `vision_context` that is sent to the Promptor node, completely uncoupling image arrays from the final text pipeline.
+### 1. `H3_Vision` (MiniMax H3 Vision)
+A highly configurable multimodal vision perception engine. This node acts as your virtual Director of Photography, analyzing input imagery, video, and audio based on explicit presets.
+*   **Dual Input Modality**: Accepts media from upstream workflow nodes via dynamic `io.Autogrow` connectors (`image_X`, `video_X`, `audio_X`) or via direct in-node drag-and-drop / click uploads.
+*   **Drag-to-Reorder Gallery**: Freely reorder cards with strict category partitioning (`All Images -> All Videos -> All Audios`). Cards and `<Picture 1>`, `<Picture 2>`, `<Video 1>` tags dynamically update and synchronize 100% with backend tensor batching.
+*   **Live Upstream Previews**: Connected inputs automatically resolve and render real upstream thumbnails with clean labels and `linked` status badges.
+*   **Intelligent Port Management**: Automatically trims excess unused empty input slots once the media cap is reached (9 images, 3 videos, 3 audios).
+*   **Targeted Custom Overrides**: Use the `custom_prompt_override` box to surgically override specific frames (e.g. `<Picture 2>: Focus entirely on the background`). Single-click cards to insert reference tags; double-click video cards to insert audio tags (`<Video Audio N>`).
+*   **Invisible Heavy VRAM Management**: Automatically unloads local models (`Ollama`, etc.) after analysis to free up VRAM for video generation.
+*   **Outputs**: Produces a structured JSON-backed `vision_context` that is sent to the Promptor node, and passes `ref_images` through zero-deformation list output.
 
-#### Vision Analyzer Inputs
+#### Vision Node Inputs
 | Parameter | Type | Description |
 |-----------|------|-------------|
-| `ref_images` | IMAGE | Connect one or multiple images; dynamically grows infinitely (`image_X`). |
-| `ref_videos` | IMAGE | Connect video tensor sequences; dynamically grows (`video_X`). |
+| `ref_images` | IMAGE | Connect pipeline images; dynamically grows (`image_X`). Up to 9 images. |
+| `ref_videos` | IMAGE | Connect video tensor sequences; dynamically grows (`video_X`). Up to 3 videos. |
+| `ref_audios` | AUDIO | Connect audio streams; dynamically grows (`audio_X`). Up to 3 audios. |
 | `global_image_mode` | COMBO | Selects the global fallback analysis logic from `vision_prompts.json` for all images. |
 | `global_video_mode` | COMBO | Selects the global fallback analysis logic from `vision_prompts.json` for all videos. |
 | `custom_prompt_override`| STRING | A multi-line box to surgically override specific media logic. E.g: `<Picture 2>: focus on the lighting`. |
 | `output_language` | COMBO | Language for the analysis output (`English` or `Chinese`). |
-| `provider` | COMBO | Synchronizes with Settings. Pick `openai`, `anthropic`, `gemini`, `ollama` etc. |
+| `provider` | COMBO | Synchronizes with Settings. Pick `agnes-ai`, `openai`, `anthropic`, `gemini`, `ollama` etc. |
 | `temperature` | FLOAT | Sampling temperature. Default `0.2` for precise factual analysis. |
 | `max_tokens` | INT | Maximum response tokens (256-8192). |
 
-### 2. `H3_Promptor` 📝
-The core structure engine. It operates at blazing speeds because it takes the user's description and the Vision Analyzer's text report to format the final H3 Prompt—meaning **it does not need to repeatedly analyze heavy images.**
+#### Vision Node Outputs
+| Output | Type | Description |
+|--------|------|-------------|
+| `VISION_CONTEXT` | STRING | Structured JSON text report for `H3_Promptor`. |
+| `REF_IMAGES` | IMAGE | Zero-deformation list output containing all reference images. |
+
+---
+
+### 2. `H3_Promptor` (MiniMax H3 Promptor)
+The core screenplay and directing engine. It operates at blazing speeds because it takes the user's description and the Vision node's text report to format the final H3 Prompt—meaning **it does not need to repeatedly analyze heavy images.**
+
 ### The "Auto" Multimodal Routing System
-The `H3_Promptor` uses a highly intelligent backend algorithm to instantly detect your intended generation mode without manual configuration. When left on **Auto**, the system evaluates the number of images, videos, and audio streams present in the `vision_context` and routes the formatting logic automatically:
+The `H3_Promptor` uses an intelligent backend algorithm to instantly detect your intended generation mode without manual configuration. When left on **Auto**, the system evaluates the number of images, videos, and audio streams present in the `vision_context` and routes the formatting logic automatically:
 
 | Connected Media | Triggered Mode | Description |
 |---|---|---|
@@ -85,23 +117,30 @@ The `H3_Promptor` uses a highly intelligent backend algorithm to instantly detec
 *(If you wish to force a mode, such as **L2VA** which requires 1 image but acts as the ending frame, simply select it from the dropdown to override the Auto system).*
 
 *   **Language Selection**: Output the final cinematic prompt strictly in **Chinese (简体中文)** or **English**, seamlessly bridging international setups.
-*   **Duration Syncing**: Define how long your video is (4-15s), and the LLM will rigorously pace the structural shot-list to match that exact timeframe at 24FPS.
+*   **Duration Syncing & Frame Calculation**: Define how long your video is (4.0-15.0s), and the LLM will rigorously pace the structural shot-list to match that exact timeframe.
 
 #### Promptor Inputs
 | Parameter | Type | Description |
 |-----------|------|-------------|
 | `task_type` | COMBO | The generation mode (`Auto`, T2V, I2V, FL2VA, etc.). Auto is recommended. |
 | `description` | STRING | Your main creative description of the video scene. |
-| `duration` | INT | Desired video length (4-15 seconds). |
-| `vision_context` | STRING | Connect the output of `H3_Vision_Analyzer` here. Leave unconnected for pure T2V. |
+| `duration` | FLOAT | Desired video length (4.0-15.0 seconds). |
+| `vision_context` | STRING | Connect the output of `H3_Vision` here. Leave unconnected for pure T2V. |
 | `output_language` | COMBO | Output the resulting prompt in `English` or `Chinese`. |
-| `provider` | COMBO | Synchronizes with Settings. Pick `openai`, `anthropic`, `gemini`, `ollama` etc. |
+| `provider` | COMBO | Synchronizes with Settings. Pick `agnes-ai`, `openai`, `anthropic`, `gemini`, `ollama` etc. |
 | `temperature` | FLOAT | Sampling temperature. Default `0.7` for creative writing. |
 | `max_tokens` | INT | Maximum response tokens (256-8192). |
 
+#### Promptor Outputs
+| Output | Type | Description |
+|--------|------|-------------|
+| `PROMPT` | STRING | The generated Hollywood-grade MiniMax H3 prompt. |
+| `DURATION` | FLOAT | Target video duration in seconds (direct pass-through for downstream Sampler/Audio nodes). |
+| `LENGTH` | INT | Calculated frame count aligned with `% 17 == 5` model specification (`max(5, round(duration * 24))`). |
+
 ---
 
-## 🔌 Supported LLM Providers & Local Model Setup
+## Supported LLM Providers & Local Model Setup
 
 Both cloud and local offline providers are supported natively. **Ollama** and **LM Studio** are enabled by default for zero-friction local workflows!
 
@@ -113,7 +152,7 @@ Both cloud and local offline providers are supported natively. **Ollama** and **
 | **Gemini** | Cloud (`gemini`) | Google AI Studio | `gemini-2.5-flash` | Requires Google AI API Key |
 | **Anthropic** | Cloud (`claude`) | Anthropic API | `claude-3-5-sonnet-latest` | Requires Anthropic API Key |
 
-### 💻 Running Completely Offline / Locally (Ollama, LM Studio & llama.cpp)
+### Running Completely Offline / Locally (Ollama, LM Studio & llama.cpp)
 
 1. **LM Studio**:
    - Start LM Studio and load any Vision or Text LLM (e.g. Qwen2.5, MiniCPM-V, Llama-3.2).
@@ -141,16 +180,16 @@ Both cloud and local offline providers are supported natively. **Ollama** and **
 
 ---
 
-## 🌟 Workflow Recipes & Tutorials
+## Workflow Recipes & Tutorials
 
 Want to learn how to do **Lip-Syncing, Character Interaction, Video Style Transfer**, or **High-End Product Commercials**?
 
-👉 **[Click here to view the Master Workflow Tutorials](tutorials.md)**
-👉 **[点击这里查看 8 大经典实战工作流教程 (中文版)](tutorials_zh.md)**
+*   [Click here to view the Master Workflow Tutorials (tutorials.md)](tutorials.md)
+*   [点击这里查看 8 大经典实战工作流教程 (中文版) (tutorials_zh.md)](tutorials_zh.md)
 
 ---
 
-## 🚀 Installation & Setup
+## Installation & Setup
 
 1. **Clone the Repository**:
    Clone this repo into your `ComfyUI/custom_nodes` folder:
@@ -167,7 +206,7 @@ Want to learn how to do **Lip-Syncing, Character Interaction, Video Style Transf
 
 ---
 
-## 🎨 Modding & Customization
+## Modding & Customization
 
 ### The `vision_prompts.json` Ecosystem
 Upon the first boot of V1.0.0, a `vision_prompts.json` file is generated in the root folder. You can open this JSON file to modify or add completely new analysis strategies:
@@ -188,7 +227,7 @@ Open the `templates/` directory. The `system_base.txt` controls global rules, wh
 
 ---
 
-##  Credits & Resources
+## Credits & Resources
 
 *   Developed by **[1038lab](https://github.com/1038lab)**.
 *   **MiniMax H3 Specifications**: Designed specifically to interface with the core structural requirements given by MiniMax.
