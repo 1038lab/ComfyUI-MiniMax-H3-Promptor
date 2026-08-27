@@ -7,7 +7,7 @@ const COLOR_THEMES = {
 
 const NODE_COLORS = {
     "H3_Promptor": "H3promptor",
-    "H3_Vision_Analyzer": "H3promptor",
+    "H3_Vision": "H3promptor",
     "H3_Model_Loader": "H3Sampler",
     "H3_Video_Sampler": "H3Sampler",
     "AILab_MinimaxAllInOne": "H3Sampler",

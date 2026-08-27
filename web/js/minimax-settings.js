@@ -215,26 +215,33 @@ async function performTestConnection({ type, api_base, api_key, model }, btnElem
     }, 4000);
 }
 
-function buildDefaultsCard(title, nodePrefix, config, container) {
+function buildDefaultsCard(nodeTitle, nodePrefix, config, container) {
+    if (!config.defaults) config.defaults = {};
     const card = document.createElement("div");
     card.className = "minimax-card";
 
     const row = document.createElement("div");
     row.className = "minimax-provider-row";
-    row.style.background = "transparent";
-    row.style.padding = "0";
 
-    let currentProvKey = config.defaults[`${nodePrefix}_provider`] || 'Default';
-    let currentProvStr = currentProvKey;
-    if (config.providers && config.providers[currentProvKey]) {
-        let pcfg = config.providers[currentProvKey];
-        currentProvStr = pcfg.name ? `${pcfg.name} (${pcfg.model})` : currentProvKey;
+    const currentProvKey = config.defaults[`${nodePrefix}_provider`];
+    const currentProv = config.providers[currentProvKey];
+    let currentProvName = currentProvKey;
+    if (currentProv) {
+        currentProvName = currentProv.name || currentProvKey;
+        if (currentProv.model && !currentProvName.toLowerCase().includes(currentProv.model.toLowerCase())) {
+            currentProvName += ` (${currentProv.model})`;
+        }
     }
 
-    row.innerHTML = `<div class="info"><strong>${title}</strong><small>Provider: ${currentProvStr}</small></div>`;
+    row.innerHTML = `
+        <div class="info">
+            <strong>${nodeTitle}</strong>
+            <small>Current: <span style="color:var(--input-text);">${currentProvName || 'None'}</span></small>
+        </div>
+    `;
 
     const actions = document.createElement("div");
-    actions.className = "minimax-actions";
+    actions.className = "actions";
     const editBtn = document.createElement("button");
     editBtn.className = "minimax-btn";
     editBtn.innerHTML = "<i class='pi pi-pencil'></i> Edit";
@@ -261,9 +268,18 @@ function buildDefaultsCard(title, nodePrefix, config, container) {
     const provOptions = Object.keys(config.providers || {})
         .map(k => {
             const pcfg = config.providers[k];
+            const rawName = pcfg.name || k;
+            const model = pcfg.model || "";
+            let cleanName = rawName;
+            if (model && cleanName.toLowerCase().endsWith(`(${model.toLowerCase()})`)) {
+                cleanName = cleanName.slice(0, -`(${model})`.length).trim();
+            }
+            const text = (model && !cleanName.toLowerCase().includes(model.toLowerCase()))
+                ? `${cleanName} (${model})`
+                : cleanName;
             return {
                 value: k,
-                text: pcfg.name ? `${pcfg.name} (${pcfg.model || ''})` : k
+                text: text
             };
         })
         .sort((a, b) => a.text.localeCompare(b.text));
@@ -273,18 +289,24 @@ function buildDefaultsCard(title, nodePrefix, config, container) {
     groupProv.className = "minimax-input-group";
     groupProv.innerHTML = `<label>Provider</label>`;
     const selProv = createSelect(provOptions, config.defaults[`${nodePrefix}_provider`], (e) => {
-        config.defaults[`${nodePrefix}_provider`] = e.target.value; saveTrigger();
+        const selectedKey = e.target.value;
+        config.defaults[`${nodePrefix}_provider`] = selectedKey;
+        const selectedProv = config.providers[selectedKey];
+        if (selectedProv && selectedProv.model) {
+            config.defaults[`${nodePrefix}_model`] = selectedProv.model;
+        }
+        saveTrigger();
     });
     groupProv.appendChild(selProv);
     grid.appendChild(groupProv);
-
 
     // Max Tokens
     const groupTok = document.createElement("div");
     groupTok.className = "minimax-input-group";
     groupTok.innerHTML = `<label>Max Tokens</label>`;
     const iptTok = createInput("number", config.defaults[`${nodePrefix}_max_tokens`] || 4096, (e) => {
-        config.defaults[`${nodePrefix}_max_tokens`] = parseInt(e.target.value) || 4096; saveTrigger();
+        config.defaults[`${nodePrefix}_max_tokens`] = parseInt(e.target.value) || 4096;
+        saveTrigger();
     });
     groupTok.appendChild(iptTok);
     grid.appendChild(groupTok);
@@ -293,10 +315,13 @@ function buildDefaultsCard(title, nodePrefix, config, container) {
     const groupTemp = document.createElement("div");
     groupTemp.className = "minimax-input-group";
     groupTemp.innerHTML = `<label>Temperature</label>`;
-    const iptTemp = createInput("number", config.defaults[`${nodePrefix}_temperature`] || 0.7, (e) => {
-        config.defaults[`${nodePrefix}_temperature`] = parseFloat(e.target.value) || 0.7; saveTrigger();
+    const iptTemp = createInput("number", config.defaults[`${nodePrefix}_temperature`] || (nodePrefix === 'vision' ? 0.2 : 0.7), (e) => {
+        config.defaults[`${nodePrefix}_temperature`] = parseFloat(e.target.value) || (nodePrefix === 'vision' ? 0.2 : 0.7);
+        saveTrigger();
     });
-    iptTemp.step = "0.05"; iptTemp.min = "0"; iptTemp.max = "1";
+    iptTemp.step = "0.05";
+    iptTemp.min = "0";
+    iptTemp.max = "1";
     groupTemp.appendChild(iptTemp);
     grid.appendChild(groupTemp);
 
@@ -429,6 +454,16 @@ function renderSettingsPanel(container, config) {
     container.appendChild(provCard);
 }
 
+async function fetchLocalModels() {
+    try {
+        const resp = await fetch("/minimax-h3/local_models");
+        if (resp.ok) return await resp.json();
+    } catch (e) {
+        console.error("[MiniMax] Failed to fetch local models", e);
+    }
+    return { status: "error", installed: false, models: [] };
+}
+
 function renderEditor(parentCard, pName, pData, config, mainContainer, isNew = false) {
     const existing = parentCard.querySelector(".minimax-inline-form");
     if (existing) existing.remove();
@@ -438,6 +473,7 @@ function renderEditor(parentCard, pName, pData, config, mainContainer, isNew = f
 
     // For backward compatibility, if it's not new and has no name, we default to showing the key pName
     const displayValue = pData.name || (isNew ? '' : pName);
+    const isLocal = (pData.type === 'local_llm' || pData.type === 'qwenvl');
 
     form.innerHTML = `
         <div class="minimax-options-grid">
@@ -452,34 +488,60 @@ function renderEditor(parentCard, pName, pData, config, mainContainer, isNew = f
                     <option value="ollama" ${pData.type === 'ollama' ? 'selected' : ''}>ollama</option>
                     <option value="gemini" ${pData.type === 'gemini' ? 'selected' : ''}>gemini</option>
                     <option value="anthropic" ${(pData.type === 'claude' || pData.type === 'anthropic') ? 'selected' : ''}>anthropic</option>
+                    <option value="qwenvl" ${isLocal ? 'selected' : ''}>ComfyUI-QwenVL (Local / GGUF)</option>
                 </select>
             </div>
         </div>
-        <div class="minimax-input-group" style="margin-top:8px;">
-            <label>API Base URL</label>
-            <input type="text" id="mm-f-base" value="${pData.api_base || ''}" placeholder="http://localhost:5000/v1" />
-        </div>
-        <div class="minimax-input-group" style="margin-top:8px;">
-            <label>API Key</label>
-            <input type="password" id="mm-f-key" value="${pData.api_key || ''}" placeholder="sk-..." />
-        </div>
-        <div class="minimax-options-grid" style="margin-top:8px;">
-            <div class="minimax-input-group">
-                <label>Model</label>
+
+        <!-- Cloud credentials (Hidden for local_llm) -->
+        <div id="mm-cloud-fields" style="display:${isLocal ? 'none' : 'block'};">
+            <div class="minimax-input-group" style="margin-top:8px;">
+                <label>API Base URL</label>
+                <input type="text" id="mm-f-base" value="${pData.api_base || ''}" placeholder="http://localhost:5000/v1" />
+            </div>
+            <div class="minimax-input-group" style="margin-top:8px;">
+                <label>API Key</label>
+                <input type="password" id="mm-f-key" value="${pData.api_key || ''}" placeholder="sk-..." />
+            </div>
+            <div class="minimax-input-group" style="margin-top:8px;">
+                <label>Model ID</label>
                 <input type="text" id="mm-f-model" value="${pData.model || pData.default_model || ''}" placeholder="e.g. gpt-4" />
             </div>
+        </div>
+
+        <!-- Local engine section (Shown for local_llm) -->
+        <div id="mm-local-fields" style="display:${isLocal ? 'block' : 'none'}; margin-top:8px; padding:10px; background:rgba(0,0,0,0.25); border-radius:6px; border:1px solid #444;">
+            <div id="mm-engine-status" style="font-size:12px; margin-bottom:8px; display:flex; align-items:center; gap:6px;">
+                <i class="pi pi-spin pi-spinner"></i> Checking local engine...
+            </div>
+            <div class="minimax-input-group">
+                <label>Select Local Model <small>(Loaded from ComfyUI-QwenVL custom_models.json, gguf_models.json & hf_models.json)</small></label>
+                <select id="mm-f-local-model-select" style="padding:6px; background:var(--comfy-input-bg, #222); color:#ddd; border:1px solid #555; border-radius:4px; width:100%;">
+                    <option value="">Loading models...</option>
+                </select>
+            </div>
+        </div>
+
+        <div class="minimax-options-grid" style="margin-top:8px;">
             <div class="minimax-input-group" title="Max images sent per API call. 1 = Sequential mode. 4+ = Batch mode (ideal for APIs).">
                 <label>Max Batch Images</label>
                 <input type="number" id="mm-f-batch-size" value="${pData.batch_size !== undefined ? pData.batch_size : (pData.batch_vision === false ? 1 : 4)}" min="1" max="50" style="padding: 6px;" />
             </div>
         </div>
-        <div style="margin-top:12px; display:flex; align-items:center; gap:16px;">
+        <div style="margin-top:12px; display:flex; align-items:center; gap:20px; flex-wrap:wrap;">
             <div style="display:flex; align-items:center; gap:6px;">
                 <label class="minimax-toggle">
                     <input type="checkbox" id="mm-f-enabled" ${pData.enabled !== false ? 'checked' : ''} />
                     <span class="minimax-toggle-slider"></span>
                 </label>
                 <label style="margin:0; font-weight:bold; font-size:13px; color:var(--input-text);">Enabled</label>
+            </div>
+            <div id="mm-thinking-container" style="display:${(pData.type === 'ollama' || isLocal) ? 'none' : 'flex'}; align-items:center; gap:6px;" title="Disables deep thinking/reasoning mode on compatible models (e.g. SiliconFlow, DeepSeek, Qwen3, Gemini) to prevent token waste and timeouts.">
+                <label class="minimax-toggle">
+                    <input type="checkbox" id="mm-f-disable-thinking" ${pData.disable_thinking !== false ? 'checked' : ''} />
+                    <span class="minimax-toggle-slider"></span>
+                </label>
+                <label style="margin:0; font-weight:bold; font-size:13px; color:var(--input-text);">Disable Thinking (Fast)</label>
             </div>
         </div>
         <div style="display:flex; justify-content:flex-end; gap:8px; margin-top: 12px;">
@@ -491,13 +553,123 @@ function renderEditor(parentCard, pName, pData, config, mainContainer, isNew = f
 
     parentCard.appendChild(form);
 
+    async function loadLocalModels() {
+        const statusEl = document.getElementById("mm-engine-status");
+        const selectEl = document.getElementById("mm-f-local-model-select");
+        if (!statusEl || !selectEl) return;
+
+        statusEl.innerHTML = "<i class='pi pi-spin pi-spinner'></i> Scanning ComfyUI-QwenVL models...";
+        const data = await fetchLocalModels();
+        if (data.installed) {
+            const count = data.models ? data.models.length : 0;
+            const downloadedCount = data.downloaded_count || (data.models ? data.models.filter(m => m.downloaded).length : 0);
+            statusEl.innerHTML = `<span style="color:#4ade80;"><i class="pi pi-check-circle"></i> ComfyUI-QwenVL Engine Detected (${count} models in catalog, <strong>${downloadedCount} downloaded & ready</strong>)</span>`;
+        } else {
+            statusEl.innerHTML = `<span style="color:#f87171;"><i class="pi pi-exclamation-triangle"></i> ComfyUI-QwenVL custom node not found. Please install ComfyUI-QwenVL from ComfyUI Manager.</span>`;
+        }
+
+        selectEl.innerHTML = "";
+        const savedModel = (pData.model || pData.default_model || "").trim();
+
+        if (data.models && data.models.length > 0) {
+            data.models.forEach((m, idx) => {
+                const opt = document.createElement("option");
+                const mId = m.id || m.name || m.file;
+                const isReady = m.downloaded === true;
+                const sizeInfo = m.size_mb ? ` (${m.size_mb} MB)` : "";
+                const formatTag = m.format ? ` [${m.format.toUpperCase()}]` : "";
+                const typeTag = m.type ? ` [${m.type.toUpperCase()}]` : "";
+
+                if (isReady) {
+                    opt.textContent = `🟢 [Ready] ${m.name}${sizeInfo}${formatTag}${typeTag}`;
+                    opt.style.color = "#4ade80";
+                    opt.style.fontWeight = "600";
+                } else {
+                    opt.textContent = `⬇️ [Not Downloaded] ${m.name}${formatTag}${typeTag}`;
+                    opt.style.color = "#9ca3af";
+                }
+
+                opt.value = mId;
+                if (mId === savedModel || (!savedModel && idx === 0)) {
+                    opt.selected = true;
+                    if (isNew && idx === 0) {
+                        const nameInput = document.getElementById("mm-f-name");
+                        if (nameInput && !nameInput.value) {
+                            nameInput.value = mId.replace(/\.gguf$/i, "").toLowerCase();
+                        }
+                    }
+                }
+                selectEl.appendChild(opt);
+            });
+
+            selectEl.onchange = (e) => {
+                const selectedOpt = selectEl.options[selectEl.selectedIndex];
+                if (!selectedOpt || !selectedOpt.value) return;
+                const modelName = selectedOpt.value.replace(/\.gguf$/i, "").toLowerCase();
+                const nameInput = document.getElementById("mm-f-name");
+                if (nameInput) {
+                    nameInput.value = modelName;
+                }
+            };
+        } else {
+            const opt = document.createElement("option");
+            opt.value = "";
+            opt.disabled = true;
+            opt.selected = true;
+            opt.textContent = data.installed 
+                ? "No models found in custom_models.json / gguf_models.json" 
+                : "ComfyUI-QwenVL not installed";
+            selectEl.appendChild(opt);
+        }
+    }
+
+    if (isLocal) {
+        loadLocalModels();
+    }
+
+    const typeSelect = document.getElementById("mm-f-type");
+    if (typeSelect) {
+        typeSelect.onchange = (e) => {
+            const localMode = e.target.value === "local_llm" || e.target.value === "qwenvl";
+            const thinkingCont = document.getElementById("mm-thinking-container");
+            const cloudFields = document.getElementById("mm-cloud-fields");
+            const localFields = document.getElementById("mm-local-fields");
+            
+            if (thinkingCont) {
+                thinkingCont.style.display = (e.target.value === "ollama" || localMode) ? "none" : "flex";
+            }
+            if (cloudFields) cloudFields.style.display = localMode ? "none" : "block";
+            if (localFields) localFields.style.display = localMode ? "block" : "none";
+
+            if (localMode) {
+                loadLocalModels();
+            }
+        };
+    }
+
+    const cloudModelInput = document.getElementById("mm-f-model");
+    if (cloudModelInput) {
+        cloudModelInput.oninput = (e) => {
+            const nameInput = document.getElementById("mm-f-name");
+            if (nameInput && isNew) {
+                nameInput.value = e.target.value.trim().toLowerCase();
+            }
+        };
+    }
+
     document.getElementById("mm-btn-test-edit").onclick = () => {
         const testBtn = document.getElementById("mm-btn-test-edit");
+        const curType = document.getElementById("mm-f-type").value;
+        const curIsLocal = curType === "local_llm" || curType === "qwenvl";
+        const curModel = curIsLocal 
+            ? (document.getElementById("mm-f-local-model-select") ? document.getElementById("mm-f-local-model-select").value : "")
+            : document.getElementById("mm-f-model").value.trim();
+
         performTestConnection({
-            type: document.getElementById("mm-f-type").value,
-            api_base: document.getElementById("mm-f-base").value.trim(),
-            api_key: document.getElementById("mm-f-key").value.trim(),
-            model: document.getElementById("mm-f-model").value.trim()
+            type: curType,
+            api_base: curIsLocal ? "" : document.getElementById("mm-f-base").value.trim(),
+            api_key: curIsLocal ? "" : document.getElementById("mm-f-key").value.trim(),
+            model: curModel
         }, testBtn);
     };
 
@@ -505,6 +677,12 @@ function renderEditor(parentCard, pName, pData, config, mainContainer, isNew = f
     document.getElementById("mm-btn-save").onclick = async () => {
         const title = document.getElementById("mm-f-name").value.trim().toLowerCase();
         if (!title) return alert("Display name is required");
+
+        const curType = document.getElementById("mm-f-type").value;
+        const curIsLocal = curType === "local_llm" || curType === "qwenvl";
+        const curModel = curIsLocal 
+            ? (document.getElementById("mm-f-local-model-select") ? document.getElementById("mm-f-local-model-select").value : "")
+            : document.getElementById("mm-f-model").value.trim();
 
         let pId = pName;
         // Generate UUID if it's a completely new provider
@@ -514,11 +692,12 @@ function renderEditor(parentCard, pName, pData, config, mainContainer, isNew = f
 
         config.providers[pId] = {
             name: title,
-            type: document.getElementById("mm-f-type").value,
-            api_base: document.getElementById("mm-f-base").value.trim(),
-            api_key: document.getElementById("mm-f-key").value.trim(),
-            model: document.getElementById("mm-f-model").value.trim(),
+            type: curType,
+            api_base: curIsLocal ? "" : document.getElementById("mm-f-base").value.trim(),
+            api_key: curIsLocal ? "" : document.getElementById("mm-f-key").value.trim(),
+            model: curModel,
             enabled: document.getElementById("mm-f-enabled").checked,
+            disable_thinking: document.getElementById("mm-f-disable-thinking").checked,
             batch_size: parseInt(document.getElementById("mm-f-batch-size").value, 10) || 4
         };
 
