@@ -8,6 +8,7 @@ and this integration's license terms.
 
 Source: https://github.com/1038lab/ComfyUI-Minimax-H3-Promptor
 """
+import re
 
 try:
     from comfy_api.latest import io

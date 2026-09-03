@@ -11,6 +11,7 @@ Source: https://github.com/1038lab/ComfyUI-Minimax-H3-Promptor
 
 import json
 import os
+import re
 import shutil
 from pathlib import Path
 

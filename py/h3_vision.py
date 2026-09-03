@@ -7,6 +7,7 @@ Features type-scoped drag-and-drop reordering, upstream real preview resolution,
 and automated trim of excess unused ports.
 """
 import os
+import re
 import json
 from PIL import Image, ImageOps
 from typing import Any
@@ -144,6 +145,7 @@ class H3_Vision(io.ComfyNode):
                 io.Combo.Input("provider", options=active_providers, default=default_choice, tooltip="Vision-capable Multimodal LLM provider used to analyze images, videos, and audio.", optional=True),
                 io.Float.Input("temperature", default=0.2, min=0.0, max=1.0, step=0.05, tooltip="Sampling temperature for vision analysis reasoning (0.0 = deterministic/strict, 1.0 = creative).", optional=True),
                 io.Int.Input("max_tokens", default=2048, min=256, max=8192, step=256, tooltip="Maximum token limit for vision analysis response.", optional=True),
+                io.Int.Input("seed", default=0, min=0, max=0xffffffffffffffff, control_after_generate="fixed", tooltip="Random seed for vision analysis (Default: Fixed Value). Click randomize or change seed to re-analyze.", optional=True),
                 
                 # Autogrow input connectors — pipeline connections from other nodes
                 io.Autogrow.Input("ref_images", optional=True,
@@ -180,6 +182,7 @@ class H3_Vision(io.ComfyNode):
         custom_prompt_override: str = "",
         temperature: float = 0.2,
         max_tokens: int = 2048,
+        seed: int = 0,
         ref_images: io.Autogrow.Type = None,
         ref_videos: io.Autogrow.Type = None,
         ref_audios: io.Autogrow.Type = None,
@@ -192,21 +195,45 @@ class H3_Vision(io.ComfyNode):
             available_videos = {}
             available_audios = {}
 
-            # Collect from Autogrow connectors
-            if ref_images and isinstance(ref_images, dict):
-                for key in sorted(ref_images.keys()):
-                    if ref_images[key] is not None:
-                        available_images[f"link:{key}"] = ref_images[key]
+            # Collect from Autogrow connectors (supporting dict, list/tuple, and single tensor/path)
+            if ref_images is not None:
+                if isinstance(ref_images, dict):
+                    for key in sorted(ref_images.keys()):
+                        if ref_images[key] is not None:
+                            k_name = key if key.startswith("image_") else f"image_{key}"
+                            available_images[f"link:{k_name}"] = ref_images[key]
+                elif isinstance(ref_images, (list, tuple)):
+                    for idx, img in enumerate(ref_images):
+                        if img is not None:
+                            available_images[f"link:image_{idx}"] = img
+                else:
+                    available_images["link:image_0"] = ref_images
 
-            if ref_videos and isinstance(ref_videos, dict):
-                for key in sorted(ref_videos.keys()):
-                    if ref_videos[key] is not None:
-                        available_videos[f"link:{key}"] = ref_videos[key]
+            if ref_videos is not None:
+                if isinstance(ref_videos, dict):
+                    for key in sorted(ref_videos.keys()):
+                        if ref_videos[key] is not None:
+                            k_name = key if key.startswith("video_") else f"video_{key}"
+                            available_videos[f"link:{k_name}"] = ref_videos[key]
+                elif isinstance(ref_videos, (list, tuple)):
+                    for idx, vid in enumerate(ref_videos):
+                        if vid is not None:
+                            available_videos[f"link:video_{idx}"] = vid
+                else:
+                    available_videos["link:video_0"] = ref_videos
 
-            if ref_audios and isinstance(ref_audios, dict):
-                for key in sorted(ref_audios.keys()):
-                    if ref_audios[key] is not None:
-                        available_audios[f"link:{key}"] = ref_audios[key]
+            if ref_audios is not None:
+                if isinstance(ref_audios, dict):
+                    for key in sorted(ref_audios.keys()):
+                        if ref_audios[key] is not None:
+                            k_name = key if key.startswith("audio_") else f"audio_{key}"
+                            available_audios[f"link:{k_name}"] = ref_audios[key]
+                elif isinstance(ref_audios, (list, tuple)):
+                    for idx, aud in enumerate(ref_audios):
+                        if aud is not None:
+                            available_audios[f"link:audio_{idx}"] = aud
+                else:
+                    available_audios["link:audio_0"] = ref_audios
 
             for k, v in kwargs.items():
                 if v is not None:
@@ -225,6 +252,7 @@ class H3_Vision(io.ComfyNode):
 
             media_list = media_data.get("media", [])
             custom_order = media_data.get("order", [])
+            user_reordered = media_data.get("user_reordered", False)
             linked_state = media_data.get("linked_state", {})
 
             muted_keys = set()
@@ -273,31 +301,40 @@ class H3_Vision(io.ComfyNode):
                         if key not in muted_keys:
                             available_audios[key] = full_path
 
-            # --- 2. Assemble media lists strictly respecting custom_order ---
-            parsed_images_for_vlm = []
-            parsed_videos_for_vlm = []
-            parsed_audios_for_vlm = []
+            # --- 2. Assemble media lists strictly respecting UI order ---
+            def _assemble_ordered_media(available_dict: dict, order_list: list, is_user_reordered: bool, max_count: int) -> list:
+                if not available_dict:
+                    return []
+                def _default_sort_key(k: str):
+                    is_link = 0 if k.startswith("link:") else 1
+                    num_match = re.search(r'(\d+)', k)
+                    num = int(num_match.group(1)) if num_match else 999
+                    return (is_link, num, k)
 
-            for key in custom_order:
-                if key in available_images and len(parsed_images_for_vlm) < 9:
-                    parsed_images_for_vlm.append(available_images.pop(key))
-            for key, tensor in list(available_images.items()):
-                if len(parsed_images_for_vlm) < 9:
-                    parsed_images_for_vlm.append(tensor)
+                all_keys = list(available_dict.keys())
 
-            for key in custom_order:
-                if key in available_videos and len(parsed_videos_for_vlm) < 3:
-                    parsed_videos_for_vlm.append(available_videos.pop(key))
-            for key, tensor in list(available_videos.items()):
-                if len(parsed_videos_for_vlm) < 3:
-                    parsed_videos_for_vlm.append(tensor)
+                if is_user_reordered and order_list:
+                    known_keys = [k for k in order_list if k in available_dict]
+                    unknown_keys = [k for k in all_keys if k not in order_list]
+                    unknown_keys.sort(key=_default_sort_key)
+                    ordered_keys = known_keys + unknown_keys
+                else:
+                    all_keys.sort(key=_default_sort_key)
+                    ordered_keys = all_keys
 
-            for key in custom_order:
-                if key in available_audios and key not in muted_keys and len(parsed_audios_for_vlm) < 3:
-                    parsed_audios_for_vlm.append(available_audios.pop(key))
-            for key, path in list(available_audios.items()):
-                if key not in muted_keys and len(parsed_audios_for_vlm) < 3:
-                    parsed_audios_for_vlm.append(path)
+                result = []
+                seen = set()
+                for k in ordered_keys:
+                    if k in available_dict and k not in seen and len(result) < max_count:
+                        seen.add(k)
+                        result.append(available_dict[k])
+                return result
+
+            parsed_images_for_vlm = _assemble_ordered_media(available_images, custom_order, user_reordered, 9)
+            parsed_videos_for_vlm = _assemble_ordered_media(available_videos, custom_order, user_reordered, 3)
+            # Filter muted audios before assembling
+            active_audios = {k: v for k, v in available_audios.items() if k not in muted_keys}
+            parsed_audios_for_vlm = _assemble_ordered_media(active_audios, custom_order, user_reordered, 3)
 
             out_images = parsed_images_for_vlm
                 

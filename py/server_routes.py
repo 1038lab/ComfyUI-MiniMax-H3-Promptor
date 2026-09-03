@@ -1,3 +1,4 @@
+import re
 import json
 from server import PromptServer
 from aiohttp import web
@@ -233,11 +234,35 @@ async def test_connection(request):
         msg = str(e)
         if "refused" in msg.lower():
             return web.json_response({"status": "error", "message": f"Connection refused to {target_url}.\nIf using Ollama or local LLM, make sure it is running and host/port is correct."})
-        return web.json_response({"status": "error", "message": f"Cannot connect to {target_url}.\nDetails: {msg}"})
     except asyncio.TimeoutError:
         return web.json_response({"status": "error", "message": f"Connection to {target_url} timed out."})
     except Exception as e:
         return web.json_response({"status": "error", "message": str(e)})
 
-print("\033[34m[H3-Promptor]\033[0m Registered API Config Routes")
 
+from .pipeline_engine import execute_refine_section
+
+
+@PromptServer.instance.routes.post("/minimax-h3/refine_section")
+async def refine_section(request):
+    """Refine a specific section or entire prompt using the configured LLM provider."""
+    try:
+        data = await request.json()
+        import asyncio
+        loop = asyncio.get_event_loop()
+        res = await loop.run_in_executor(
+            None,
+            lambda: execute_refine_section(
+                section_name=data.get("section_name", "").strip(),
+                section_content=data.get("section_content", "").strip(),
+                instruction=data.get("instruction", "").strip(),
+                provider_key=data.get("provider_key", "").strip(),
+                is_retry=bool(data.get("is_retry", False))
+            )
+        )
+        return web.json_response(res)
+    except Exception as e:
+        return web.json_response({"status": "error", "message": str(e)})
+
+
+print("\033[34m[H3-Promptor]\033[0m Registered API Config Routes")

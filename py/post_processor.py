@@ -257,8 +257,6 @@ class PostProcessor:
             tag = f"<d>[{language}]{dialogue}</d>"
             if tag in result:
                 continue
-            if re.search(rf'<d>[^<]*{re.escape(dialogue)}[^<]*</d>', result, re.IGNORECASE):
-                continue
             if dialogue in result:
                 for quoted in (f"“{dialogue}”", f"‘{dialogue}’", f'"{dialogue}"', f"'{dialogue}'"):
                     if quoted in result:
@@ -291,8 +289,6 @@ class PostProcessor:
             insertion = " " + " ".join(sentences) + " "
             result = result[:insert_pos] + insertion + result[insert_pos:]
 
-        # Clean up any potential nested <d> tags
-        result = re.sub(r'<d>\[(\w+)\]\s*<d>\[\1\](.*?)</d>\s*</d>', r'<d>[\1]\2</d>', result, flags=re.IGNORECASE | re.DOTALL)
         return result
 
     @staticmethod
