@@ -127,6 +127,7 @@ function kindOf(file) {
 
 function fileUrl(name) {
     if (!name) return "";
+    if (/^https?:\/\//i.test(name) || name.startsWith("blob:") || name.startsWith("data:")) return name;
     const parts = String(name).replaceAll("\\", "/").split("/").filter(Boolean);
     const filename = parts.pop() || "";
     const params = new URLSearchParams({ filename, type: "input", subfolder: parts.join("/") });
@@ -188,21 +189,63 @@ function getLinkedMedia(node) {
         let nodeTitle = "";
 
         const link = graph?.links ? graph.links[inp.link] : null;
-        if (link) {
-            originNode = graph?.getNodeById(link.origin_id);
-            if (originNode) {
-                nodeTitle = originNode.title || originNode.type || "";
-                const mediaWidget = originNode.widgets?.find(w => {
-                    const wn = (w.name || "").toLowerCase();
-                    return wn === "image" || wn === "video" || wn === "audio" || wn === "file" || wn === "filename" || wn === "video_path";
-                });
-                if (mediaWidget && typeof mediaWidget.value === "string" && mediaWidget.value.trim()) {
-                    fileName = mediaWidget.value.split("/").pop().split("\\").pop();
-                    previewUrl = fileUrl(mediaWidget.value);
-                } else if (originNode.imgs && originNode.imgs.length > 0 && originNode.imgs[0]?.src) {
-                    previewUrl = originNode.imgs[0].src;
-                }
+        if (!link) {
+            continue;
+        }
+
+        originNode = graph?.getNodeById(link.origin_id);
+        if (!originNode) {
+            continue;
+        }
+
+        nodeTitle = originNode.title || originNode.type || "";
+
+        // Track changes on all media/path/url widgets on upstream node
+        const relevantWidgets = originNode.widgets?.filter(w => {
+            const wn = (w.name || "").toLowerCase();
+            return wn.includes("image") || wn.includes("video") || wn.includes("audio") ||
+                   wn.includes("file") || wn.includes("path") || wn.includes("url");
+        }) || [];
+
+        relevantWidgets.forEach(w => {
+            if (!w._mmv_nodes) {
+                w._mmv_nodes = new Set();
+                const oldCb = w.callback;
+                w.callback = function (...args) {
+                    const ret = oldCb?.apply(this, args);
+                    setTimeout(() => w._mmv_nodes?.forEach(n => n._mmv_refresh?.()), 0);
+                    return ret;
+                };
             }
+            w._mmv_nodes.add(node);
+        });
+
+        // Hierarchy rule:
+        // Priority 1: URL / Path widget if filled (e.g. RMBG's Image Path or URL has max priority)
+        let mediaWidget = relevantWidgets.find(w => {
+            const wn = (w.name || "").toLowerCase();
+            return (wn.includes("url") || wn.includes("path")) && typeof w.value === "string" && w.value.trim() !== "";
+        });
+
+        // Priority 2: Primary media dropdown/file if non-empty (e.g. 11.jpg, mm.mp4)
+        if (!mediaWidget) {
+            mediaWidget = relevantWidgets.find(w => {
+                const wn = (w.name || "").toLowerCase();
+                const isPrimary = wn === "image" || wn === "video" || wn === "audio" || wn === "file" || wn === "filename";
+                return isPrimary && typeof w.value === "string" && w.value.trim() !== "";
+            });
+        }
+
+        // Priority 3: Fallback to any non-empty string widget
+        if (!mediaWidget) {
+            mediaWidget = relevantWidgets.find(w => typeof w.value === "string" && w.value.trim() !== "");
+        }
+
+        if (mediaWidget && typeof mediaWidget.value === "string" && mediaWidget.value.trim()) {
+            fileName = mediaWidget.value.split("/").pop().split("\\").pop();
+            previewUrl = fileUrl(mediaWidget.value);
+        } else if (originNode.imgs && originNode.imgs.length > 0 && originNode.imgs[0]?.src) {
+            previewUrl = originNode.imgs[0].src;
         }
 
         linked.push({
@@ -293,6 +336,8 @@ function createPanel(node) {
         requestAnimationFrame(syncNodeHeight);
     };
 
+    let userReordered = false;
+
     // Attempt to load saved state
     const stateWidget = widget(node, "_media_state");
     if (stateWidget && stateWidget.value) {
@@ -308,6 +353,9 @@ function createPanel(node) {
             if (Array.isArray(data.order)) {
                 mediaOrder = data.order;
             }
+            if (data.user_reordered) {
+                userReordered = true;
+            }
             if (data.linked_state && typeof data.linked_state === "object") {
                 linkedState = data.linked_state;
             }
@@ -322,6 +370,7 @@ function createPanel(node) {
         const stateStr = JSON.stringify({
             media: [...media.entries()],
             order: mediaOrder,
+            user_reordered: userReordered,
             linked_state: linkedState
         });
         if (stateWidget) {
@@ -359,14 +408,23 @@ function createPanel(node) {
         const audioKeys = [...allKeys].filter(k => allMap.get(k)?.kind === "audio");
 
         function sortKindKeys(keys) {
-            const known = keys.filter(k => mediaOrder.includes(k)).sort((a, b) => mediaOrder.indexOf(a) - mediaOrder.indexOf(b));
-            const unknown = keys.filter(k => !mediaOrder.includes(k)).sort((a, b) => {
-                const itemA = allMap.get(a);
-                const itemB = allMap.get(b);
-                if (itemA.isLinked !== itemB.isLinked) return itemA.isLinked ? -1 : 1;
-                return a.localeCompare(b);
-            });
-            return [...known, ...unknown];
+            if (userReordered && mediaOrder.length > 0) {
+                const known = keys.filter(k => mediaOrder.includes(k)).sort((a, b) => mediaOrder.indexOf(a) - mediaOrder.indexOf(b));
+                const unknown = keys.filter(k => !mediaOrder.includes(k)).sort((a, b) => {
+                    const itemA = allMap.get(a);
+                    const itemB = allMap.get(b);
+                    if (itemA.isLinked !== itemB.isLinked) return itemA.isLinked ? -1 : 1;
+                    return a.localeCompare(b, undefined, { numeric: true });
+                });
+                return [...known, ...unknown];
+            } else {
+                return keys.sort((a, b) => {
+                    const itemA = allMap.get(a);
+                    const itemB = allMap.get(b);
+                    if (itemA.isLinked !== itemB.isLinked) return itemA.isLinked ? -1 : 1;
+                    return a.localeCompare(b, undefined, { numeric: true });
+                });
+            }
         }
 
         const sortedImageKeys = sortKindKeys(imageKeys);
@@ -374,11 +432,16 @@ function createPanel(node) {
         const sortedAudioKeys = sortKindKeys(audioKeys);
 
         // Strict category order: All Images -> All Videos -> All Audios (capped at MiniMax limits: 9 images, 3 videos, 3 audios)
-        mediaOrder = [
+        const newOrder = [
             ...sortedImageKeys.slice(0, 9),
             ...sortedVideoKeys.slice(0, 3),
             ...sortedAudioKeys.slice(0, 3)
         ];
+        const isOrderChanged = newOrder.length !== mediaOrder.length || newOrder.some((k, i) => k !== mediaOrder[i]);
+        mediaOrder = newOrder;
+        if (isOrderChanged) {
+            persistState();
+        }
 
         let imgCount = 0;
         let vidCount = 0;
@@ -412,11 +475,26 @@ function createPanel(node) {
         if (!textarea) return;
 
         let val = textarea.value;
+        const tagTarget = tagStr.trim(); // e.g. "<Picture 1>:"
 
-        if (val.includes(tagStr.trim())) {
+        // 1. Toggle Removal: If tag is already present in textarea, remove its line
+        if (val.includes(tagTarget)) {
+            const lines = val.split("\n").filter(line => !line.includes(tagTarget));
+            textarea.value = lines.join("\n").replace(/\n{3,}/g, "\n\n").trim();
+            if (overrideWidget) {
+                overrideWidget.value = textarea.value;
+                if (node.widgets_values && node.widgets) {
+                    const oIdx = node.widgets.indexOf(overrideWidget);
+                    if (oIdx !== -1) node.widgets_values[oIdx] = textarea.value;
+                }
+                overrideWidget.callback?.call(overrideWidget, textarea.value);
+                node.setDirtyCanvas?.(true, true);
+                app.graph?.setDirtyCanvas?.(true, true);
+            }
             return;
         }
 
+        // 2. Otherwise insert and strictly sort by category: Picture (1000) -> Video (2000) -> Audio (3000)
         const prefix = val && !val.endsWith("\n") ? "\n" : "";
         const combined = (val + prefix + tagStr).trimEnd();
 
@@ -506,6 +584,7 @@ function createPanel(node) {
             const fromIdx = mediaOrder.indexOf(srcKey);
             const toIdx = mediaOrder.indexOf(itemKey);
             if (fromIdx !== -1 && toIdx !== -1) {
+                userReordered = true;
                 const { items: oldItems } = getSortedMediaItems();
                 const oldTagMap = new Map(oldItems.map(it => [it.key, `<${it.kind === "image" ? "Picture" : it.kind === "video" ? "Video" : "Audio"} ${it.ordinal}>`]));
 
@@ -613,20 +692,28 @@ function createPanel(node) {
         tag.className = "mmv-card-tag";
         el.appendChild(tag);
 
-        // 3. Close Button (Uploaded items only, top-right, hidden by default, shown on hover)
-        if (!item.isLinked) {
-            const remove = make("button", {}, "×");
-            remove.className = "mmv-remove";
-            remove.title = "Delete media";
-            remove.onclick = e => {
-                e.stopPropagation();
+        // 3. Close / Disconnect Button (Top-right, hidden by default, shown on hover)
+        const remove = make("button", {}, "×");
+        remove.className = "mmv-remove";
+        remove.title = item.isLinked ? "Disconnect input" : "Delete uploaded media";
+        remove.onclick = e => {
+            e.stopPropagation();
+            if (item.isLinked) {
+                const slotIdx = item.data?.slotIdx;
+                if (slotIdx !== undefined && slotIdx !== null) {
+                    node.disconnectInput?.(slotIdx);
+                }
+                mediaOrder = mediaOrder.filter(k => k !== item.key);
+                persistState();
+                scheduleSync();
+            } else {
                 media.delete(item.slot);
                 mediaOrder = mediaOrder.filter(k => k !== item.key);
                 persistState();
                 render();
-            };
-            el.appendChild(remove);
-        }
+            }
+        };
+        el.appendChild(remove);
 
         // 4. Bottom Controls Bar (Play / Duration / Audio / Zoom)
         const bar = make("div");
@@ -741,8 +828,8 @@ function createPanel(node) {
 
         // 5. Pointer / Hover Status Bar Display & Tooltip
         el.title = item.kind === "video"
-            ? `[${labelTitle} ${ordinal}] ${displayName}\n• Click: insert <Video ${ordinal}> tag\n• Double-click: insert <Video Audio ${ordinal}> tag\n• Drag to reorder`
-            : `[${labelTitle} ${ordinal}] ${displayName}\n• Click: insert <${labelTitle} ${ordinal}> tag\n• Drag to reorder`;
+            ? `[${labelTitle} ${ordinal}] ${displayName}\n• Click: toggle insert/remove <Video ${ordinal}> tag\n• Double-click: toggle insert/remove <Video Audio ${ordinal}> tag\n• Drag to reorder`
+            : `[${labelTitle} ${ordinal}] ${displayName}\n• Click: toggle insert/remove <${labelTitle} ${ordinal}> tag\n• Drag to reorder`;
         el.onpointerenter = () => setUploadNotice(`[${labelTitle} ${ordinal}] ${displayName}`);
         el.onpointerleave = () => setUploadNotice("");
 
@@ -851,13 +938,12 @@ function createPanel(node) {
     promptTextarea.addEventListener('pointerdown', (e) => { e.stopPropagation(); });
 
     /**
-     * Manage unused Autogrow input ports:
-     * - When total media (linked + uploaded) reaches max (9 images, 3 videos, 3 audios),
-     *   freeze/remove excess unused empty input slots of that specific type.
-     * - When total media drops below max (e.g. user deletes uploaded media),
-     *   ensure exactly ONE next available input slot exists (image_0 or image_{N+1}).
+     * Elegant Autogrow & Collapse:
+     * - Autogrow: When all active ports are connected, safely add the next trailing port (e.g. video_0 connected -> add video_1).
+     * - Collapse: When disconnected, cleanly remove trailing unused excess ports so only exactly ONE waiting port remains (e.g. video_0 disconnected -> remove video_1, leaving only video_0).
+     * - Safety: Operates ONLY on trailing unlinked slots, NEVER touches connected slots, and is scheduled via requestAnimationFrame to avoid interrupting LiteGraph gestures.
      */
-    function trimUnusedAutogrowInputs() {
+    function syncAutogrowSlots() {
         if (!node.inputs) return;
 
         const kinds = [
@@ -867,114 +953,73 @@ function createPanel(node) {
         ];
 
         for (const { kind, prefix, type, max } of kinds) {
-            const kindSlots = [];
+            const slots = [];
             for (let i = 0; i < node.inputs.length; i++) {
                 const inp = node.inputs[i];
                 const nameLower = (inp.name || "").toLowerCase();
                 const typeUpper = (inp.type || "").toUpperCase();
-                const matches = typeUpper === type ||
-                                nameLower.startsWith(prefix) ||
-                                nameLower === kind ||
-                                nameLower.startsWith("ref_" + kind);
-                if (matches) {
+                if (typeUpper === type || nameLower.startsWith(prefix) || nameLower === kind || nameLower.startsWith("ref_" + kind)) {
                     const m = (inp.name || "").match(/_(\d+)$/);
-                    const slotIdx = m ? parseInt(m[1], 10) : kindSlots.length;
-                    kindSlots.push({ inputIndex: i, slotIndex: slotIdx, inp, isLinked: inp.link != null });
+                    const slotIdx = m ? parseInt(m[1], 10) : slots.length;
+                    slots.push({ inputIndex: i, slotIdx, inp, isLinked: inp.link != null });
                 }
             }
 
-            const linkedSlots = kindSlots.filter(s => s.isLinked);
+            const linkedSlots = slots.filter(s => s.isLinked);
             const linkedCount = linkedSlots.length;
             const uploadedCount = [...media.values()].filter(e => e.kind === kind).length;
             const totalCount = linkedCount + uploadedCount;
 
             if (totalCount >= max) {
-                // Capacity reached: remove all unlinked slots of this kind
-                for (let i = node.inputs.length - 1; i >= 0; i--) {
-                    const inp = node.inputs[i];
-                    const nameLower = (inp.name || "").toLowerCase();
-                    const typeUpper = (inp.type || "").toUpperCase();
-                    const matches = typeUpper === type ||
-                                    nameLower.startsWith(prefix) ||
-                                    nameLower === kind ||
-                                    nameLower.startsWith("ref_" + kind);
-                    if (matches && inp.link == null) {
-                        node.removeInput(i);
+                for (let i = slots.length - 1; i >= 0; i--) {
+                    const s = slots[i];
+                    if (!s.isLinked) {
+                        node.removeInput(s.inputIndex);
+                    }
+                }
+            } else if (linkedCount === 0) {
+                const hasBase = slots.some(s => s.slotIdx === 0);
+                if (!hasBase) {
+                    node.addInput(`${prefix}0`, type);
+                }
+                for (let i = slots.length - 1; i >= 0; i--) {
+                    const s = slots[i];
+                    if (!s.isLinked && s.slotIdx > 0) {
+                        node.removeInput(s.inputIndex);
                     }
                 }
             } else {
-                // Capacity available: ensure exactly ONE trailing unlinked slot exists for next connection
-                if (linkedCount === 0) {
-                    const hasBase = kindSlots.some(s => s.slotIndex === 0);
-                    if (!hasBase) {
-                        const slotName = `${prefix}0`;
-                        let insertIdx = node.inputs.length;
-                        if (kind === "image") {
-                            const vIdx = node.inputs.findIndex(i => (i.name || "").toLowerCase().includes("video") || i.type === "VIDEO");
-                            const aIdx = node.inputs.findIndex(i => (i.name || "").toLowerCase().includes("audio") || i.type === "AUDIO");
-                            insertIdx = vIdx !== -1 ? vIdx : (aIdx !== -1 ? aIdx : 0);
-                        } else if (kind === "video") {
-                            const aIdx = node.inputs.findIndex(i => (i.name || "").toLowerCase().includes("audio") || i.type === "AUDIO");
-                            insertIdx = aIdx !== -1 ? aIdx : node.inputs.length;
-                        }
-                        node.addInput(slotName, type);
-                        if (insertIdx < node.inputs.length - 1) {
-                            node.inputs.splice(insertIdx, 0, node.inputs.pop());
-                        }
-                    }
-                    for (let i = node.inputs.length - 1; i >= 0; i--) {
-                        const inp = node.inputs[i];
-                        const nameLower = (inp.name || "").toLowerCase();
-                        const typeUpper = (inp.type || "").toUpperCase();
-                        const matches = typeUpper === type ||
-                                        nameLower.startsWith(prefix) ||
-                                        nameLower === kind ||
-                                        nameLower.startsWith("ref_" + kind);
-                        if (matches && inp.link == null) {
-                            const m = (inp.name || "").match(/_(\d+)$/);
-                            const slotIdx = m ? parseInt(m[1], 10) : 0;
-                            if (slotIdx > 0) {
-                                node.removeInput(i);
-                            }
-                        }
-                    }
-                } else {
-                    const maxLinkedIdx = Math.max(...linkedSlots.map(s => s.slotIndex));
-                    const nextSlotIdx = maxLinkedIdx + 1;
+                const maxLinkedIdx = Math.max(...linkedSlots.map(s => s.slotIdx));
+                const nextSlotIdx = maxLinkedIdx + 1;
 
-                    if (nextSlotIdx < max) {
-                        const hasNext = kindSlots.some(s => s.slotIndex === nextSlotIdx);
-                        if (!hasNext) {
-                            const nextSlotName = `${prefix}${nextSlotIdx}`;
-                            const lastLinkedItem = kindSlots.find(s => s.slotIndex === maxLinkedIdx);
-                            const insertIdx = lastLinkedItem ? lastLinkedItem.inputIndex + 1 : node.inputs.length;
-                            node.addInput(nextSlotName, type);
-                            if (insertIdx < node.inputs.length - 1) {
-                                node.inputs.splice(insertIdx, 0, node.inputs.pop());
-                            }
-                        }
+                if (nextSlotIdx < max) {
+                    const hasNext = slots.some(s => s.slotIdx === nextSlotIdx);
+                    if (!hasNext) {
+                        node.addInput(`${prefix}${nextSlotIdx}`, type);
                     }
+                }
 
-                    for (let i = node.inputs.length - 1; i >= 0; i--) {
-                        const inp = node.inputs[i];
-                        const nameLower = (inp.name || "").toLowerCase();
-                        const typeUpper = (inp.type || "").toUpperCase();
-                        const matches = typeUpper === type ||
-                                        nameLower.startsWith(prefix) ||
-                                        nameLower === kind ||
-                                        nameLower.startsWith("ref_" + kind);
-                        if (matches && inp.link == null) {
-                            const m = (inp.name || "").match(/_(\d+)$/);
-                            const slotIdx = m ? parseInt(m[1], 10) : 0;
-                            if (slotIdx !== nextSlotIdx) {
-                                node.removeInput(i);
-                            }
-                        }
+                for (let i = slots.length - 1; i >= 0; i--) {
+                    const s = slots[i];
+                    if (!s.isLinked && s.slotIdx > nextSlotIdx) {
+                        node.removeInput(s.inputIndex);
                     }
                 }
             }
         }
     }
+
+    let syncPending = false;
+    const scheduleSync = () => {
+        if (syncPending) return;
+        syncPending = true;
+        requestAnimationFrame(() => {
+            syncPending = false;
+            lastLinkedSignature = "";
+            syncAutogrowSlots();
+            render();
+        });
+    };
 
     function render() {
         stopActivePlayingMedia();
@@ -997,8 +1042,6 @@ function createPanel(node) {
             }
         }
 
-        trimUnusedAutogrowInputs();
-
         const statusBar = make("div");
         statusBar.className = "mmv-status-bar";
 
@@ -1014,6 +1057,7 @@ function createPanel(node) {
                 e.stopPropagation();
                 media.clear();
                 mediaOrder = mediaOrder.filter(k => k.startsWith("link:"));
+                userReordered = false;
                 uploadNotice = "";
                 persistState();
                 render();
@@ -1065,11 +1109,19 @@ function createPanel(node) {
 
     let lastLinkedSignature = "";
     const checkAndSyncLinked = () => {
+        const graph = app.graph || node.graph;
         const currentSignature = (node.inputs || []).map(i => {
             if (i.link == null) return `${i.name}:null`;
-            const link = (app.graph || node.graph)?.links?.[i.link];
-            const originNode = link ? (app.graph || node.graph)?.getNodeById(link.origin_id) : null;
-            const wVal = originNode?.widgets?.find(w => /^(image|video|audio|file|filename)/i.test(w.name || ""))?.value || "";
+            const link = graph?.links?.[i.link];
+            const originNode = link ? graph?.getNodeById(link.origin_id) : null;
+            if (!link || !originNode) {
+                return `${i.name}:unresolved`;
+            }
+            let activeWidget = originNode?.widgets?.find(w => /^(image|video|audio|file|filename)/i.test(w.name || "") && typeof w.value === "string" && w.value.trim() !== "");
+            if (!activeWidget) {
+                activeWidget = originNode?.widgets?.find(w => /^(image|video|audio|file|filename)/i.test(w.name || ""));
+            }
+            const wVal = activeWidget?.value || "";
             const imgVal = originNode?.imgs?.[0]?.src || "";
             return `${i.name}:${i.link}:${wVal}:${imgVal}`;
         }).join("|");
@@ -1099,11 +1151,14 @@ function createPanel(node) {
         return previousOnDrawBackground?.apply(this, arguments);
     };
 
+    node._mmv_refresh = () => {
+        scheduleSync();
+    };
+
     const previousOnConnectionsChange = node.onConnectionsChange;
     node.onConnectionsChange = function (...args) {
         previousOnConnectionsChange?.apply(this, args);
-        lastLinkedSignature = "";
-        render();
+        scheduleSync();
     };
 
     const previousOnConfigure = node.onConfigure;
@@ -1129,9 +1184,11 @@ function createPanel(node) {
                 }
             } catch (e) {}
         }
-        trimUnusedAutogrowInputs();
-        lastLinkedSignature = "";
-        render();
+        setTimeout(() => {
+            syncAutogrowSlots();
+            lastLinkedSignature = "";
+            render();
+        }, 50);
     };
 
     const captureMaterialDrop = event => {
@@ -1150,6 +1207,7 @@ function createPanel(node) {
 
     const oldRemoved = node.onRemoved;
     node.onRemoved = function (...args) {
+        node._mmv_refresh = null;
         stopActivePlayingMedia();
         window.removeEventListener("dragenter", captureMaterialDrop, true);
         window.removeEventListener("dragover", captureMaterialDrop, true);
