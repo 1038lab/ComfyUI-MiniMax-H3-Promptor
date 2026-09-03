@@ -18,6 +18,7 @@ V1.5.0 introduces the **`MiniMax H3 Manual Prompt Composer`**, a dedicated works
 * **Unified Syntax Highlighting & Color System**: Cohesive dark matte palette with clear visual hierarchy across all suite nodes.
 
 ### 🪄 Targeted & Global AI Prompt Refinement
+<img width="2361" height="1365" alt="image" src="https://github.com/user-attachments/assets/ac9f92dc-c134-4d36-832c-294e7f59846d" />
 
 Inside both **`H3_PromptEditor`** (Preview & Edit) and **`H3_PromptComposer`** (Manual Composer), clicking the **`✨ Refine`** button in the toolbar opens a centered frosted-glass modal to rewrite, polish, and elevate prompts in seconds:
 
