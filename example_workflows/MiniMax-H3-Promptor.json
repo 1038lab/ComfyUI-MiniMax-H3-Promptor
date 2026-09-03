@@ -1,19 +1,234 @@
 {
-  "id": "84d65322-5b4c-471b-b050-62b4686338f4",
+  "id": "980f8f24-e3a1-46b4-821b-1f3fbf7a51a6",
   "revision": 0,
-  "last_node_id": 179,
-  "last_link_id": 277,
+  "last_node_id": 18,
+  "last_link_id": 15,
   "nodes": [
     {
-      "id": 178,
+      "id": 4,
+      "type": "H3_Vision",
+      "pos": [
+        666.5760685836792,
+        469.6210222417757
+      ],
+      "size": [
+        460.1875,
+        701
+      ],
+      "flags": {},
+      "order": 3,
+      "mode": 0,
+      "inputs": [
+        {
+          "label": "image_0",
+          "name": "ref_images.image_0",
+          "shape": 7,
+          "type": "IMAGE",
+          "link": 15
+        },
+        {
+          "label": "image_1",
+          "name": "ref_images.image_1",
+          "shape": 7,
+          "type": "IMAGE",
+          "link": null
+        },
+        {
+          "label": "video_0",
+          "name": "ref_videos.video_0",
+          "shape": 7,
+          "type": "VIDEO",
+          "link": 13
+        },
+        {
+          "label": "video_1",
+          "name": "ref_videos.video_1",
+          "shape": 7,
+          "type": "VIDEO",
+          "link": null
+        },
+        {
+          "label": "audio_0",
+          "name": "ref_audios.audio_0",
+          "shape": 7,
+          "type": "AUDIO",
+          "link": 14
+        },
+        {
+          "label": "audio_1",
+          "name": "ref_audios.audio_1",
+          "shape": 7,
+          "type": "AUDIO",
+          "link": null
+        },
+        {
+          "name": "image_1",
+          "type": "IMAGE",
+          "link": null
+        }
+      ],
+      "outputs": [
+        {
+          "name": "VISION_CONTEXT",
+          "type": "STRING",
+          "links": [
+            7,
+            10
+          ]
+        },
+        {
+          "name": "REF_IMAGES",
+          "type": "IMAGE",
+          "links": null
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "H3_Vision",
+        "ue_properties": {
+          "widget_ue_connectable": {},
+          "input_ue_unconnectable": {},
+          "version": "7.8"
+        }
+      },
+      "widgets_values": [
+        "Subject / Identity",
+        "Comprehensive",
+        "{\"media\":[[\"slot_1\",{\"name\":\"plaacehoder.png\",\"kind\":\"image\"}]],\"order\":[\"link:ref_images.image_0\",\"upload:slot_1\",\"link:ref_videos.video_0\",\"link:ref_audios.audio_0\"],\"user_reordered\":false,\"linked_state\":{}}",
+        "English",
+        "agnes-ai (agnes-2.5-flash)",
+        0.2,
+        2048,
+        0,
+        "fixed",
+        "",
+        ""
+      ],
+      "widgets_values_named": {
+        "global_image_mode": "Subject / Identity",
+        "global_video_mode": "Comprehensive",
+        "_media_state": "{\"media\":[[\"slot_1\",{\"name\":\"plaacehoder.png\",\"kind\":\"image\"}]],\"order\":[\"link:ref_images.image_0\",\"upload:slot_1\",\"link:ref_videos.video_0\",\"link:ref_audios.audio_0\"],\"user_reordered\":false,\"linked_state\":{}}",
+        "output_language": "English",
+        "provider": "agnes-ai (agnes-2.5-flash)",
+        "temperature": 0.2,
+        "max_tokens": 2048,
+        "seed": 0,
+        "fixed": "fixed",
+        "custom_prompt_override": "",
+        "gh_vision_panel": ""
+      },
+      "color": "#221f33ff",
+      "bgcolor": "#3b3850ff"
+    },
+    {
+      "id": 6,
+      "type": "H3_PromptEditor",
+      "pos": [
+        2157.23874408262,
+        552.7286598731109
+      ],
+      "size": [
+        990.703125,
+        1517.3125
+      ],
+      "flags": {
+        "min_width": 400,
+        "min_height": 200
+      },
+      "order": 7,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "prompt",
+          "shape": 7,
+          "type": "STRING",
+          "link": 9
+        }
+      ],
+      "outputs": [
+        {
+          "name": "PROMPT",
+          "type": "STRING",
+          "links": null
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "H3_PromptEditor",
+        "ue_properties": {
+          "widget_ue_connectable": {},
+          "input_ue_unconnectable": {},
+          "version": "7.8"
+        }
+      },
+      "widgets_values": [
+        "subject_definitions:\n<Subject 1> is the young woman in <Picture 1>, with young woman with dark brown hair pulled back into a loose ponytail, featuring bangs framing her face.\n<Subject 2> is the character in <Picture 2>, with ornate golden medallion or plaque featuring intricate Chinese calligraphy characters arranged in a symmetrical circular.\n<Video 1> is the source video in <Video 1>, with motion and camera rhythm: The sequence depicts a slow, meditative pull-back shot (dolly out) of an elderly sage meditating on a wooden platform atop a snowy mountain peak. The camera starts in a medium close-up, focusing on the figure's serene expression and flowing white beard, then gradually retreats to reveal the vast, misty mountain range surrounding him. The subject remains largely static in a lotus position, holding a staff, while environmental elements like wind-swept hair and rising fog create a sense of slow, deliberate pacing and atmospheric depth..\n<Audio 1> is the audio track in <Audio 1>, providing voice timbre and synchronization: [Audio file identified. LLM analysis not supported.].\n\nsummary:\n[reference generation] A 10.0-second live-action sequence executing the requested visual narrative across shots using the defined references.\n\nretention_analysis:\n<Subject 1> (appears in [Shot 1], [Shot 2], [Shot 3], [Shot 4]): fully_preserved - young woman with dark brown hair pulled back into a loose ponytail, featuring bangs framing her face maintained.\n<Subject 2> (appears in [Shot 1], [Shot 2], [Shot 3], [Shot 4]): fully_preserved - ornate golden medallion or plaque featuring intricate Chinese calligraphy characters arranged in a symmetrical circular maintained.\n<Video 1> (camera and motion): weak_reference - motion timing and camera work followed in [Shot 3], [Shot 4].\n<Audio 1>: reference - voice timbre and audio synchronization maintained.\n\ndetailed_description:\n[Shot 1] The camera begins an extreme close-up, pushing in slowly at a gentle, meditative pace. Cradled in the bare palms of <Picture 1> — her weathered, earth-toned hands framing something ancient — rests the golden medallion from <Picture 2>, its ornate calligraphy catching a thin streak of alpine rim light. The navy-blue lacquer within the engraving glows with a cold luminescence against the warm molten gold of the metal. Her fingers tremble imperceptibly, as if the weight of centuries rests on her skin. A whisper of wind stirs, and a single snowflake lands on the medallion’s edge before melting. The lens, an anamorphic 35mm with a shallow depth of field, traces a low‑angle orbital track that keeps the medallion in sharp focus while the background softens into a blurred tapestry of alpine textures. Volumetric lighting lifts the scene from below, casting subtle highlights and shadows that emphasize the texture of the metal and the moisture in the air. As the camera creeps forward, the light refracts through the lacquer, revealing microscopic imperfections that tell a story of age and devotion. The sound of the wind is almost silent, save for the faint tap of the snowflake as it touches the gold, creating an auditory cue that matches the visual rhythm. The entire sequence feels like a quiet reverence, a moment suspended in time that invites the viewer to feel the weight of history and the intimacy of human touch.\n\n[Shot 2 | 00:02.500 – 00:05.000]\nThe camera pulls back and tilts up into a medium shot from behind <Picture 1>, now standing at the edge of a weathered wooden platform perched on a snow-covered mountain peak. The wind lifts the hem of her olive shirt and sweeps her ponytail across her shoulder as she raises the golden medallion slightly in her grip — <Picture 2> glowing like a captured sun against the desaturated blue-white expanse. Ahead of her, only empty sky, drifting mist, and jagged rock faces. She stands small and vulnerable against the vastness, her bare feet planted firmly on the cold wood. The camera holds still for a breath, letting the silence speak.\n\n[Shot 3 | 00:05.000 – 00:07.500]\nA reverse angle reveals what she faces: <Video 1>, the elderly sage, seated in perfect lotus position on the far edge of the platform, his white beard and hair drifting like smoke in the mountain wind. Diffuse sky light backlights his silhouette, rendering him almost ethereal — a living monument against the cold alpine palette. <Picture 1> 's out-of-focus shoulder and the golden flash of <Picture 2> occupy the near foreground, anchoring our perspective to her awe. He does not move. He does not need to. The camera holds a holy stillness, the world holding its breath with him.\n\n[Shot 4 | 00:07.500 – 00:10.000]\nThe camera initiates a slow, expansive dolly-out, adopting the meditative pacing language of <Video 1> — retreating steadily from the two figures to unveil an immense, mist-shrouded mountain range dissolving into infinity. Snow drifts lazily through the frame like falling time. <Picture 1> 's small olive silhouette and <Video 1> 's white ghost become twin points of warmth in a world of cold blue and white. The golden medallion from <Picture 2> flashes once — a final, defiant spark of heritage in the backlight — as she lowers her hands. The journey ends not with a word, but with presence.\n\noverall_soundscape:\nThin mountain wind whistling across wooden planks, the soft crunch of snow beneath bare feet, a single metallic chime as the medallion catches the light, and a quiet, steady exhale from the woman as she lowers her hands.\n\nnon_diegetic_music:\nA sparse, atmospheric score beginning with a solitary cello drone at 60 BPM, gradually joined by distant Tibetan singing bowls and a faint high-string harmonic that swells gently across Shot 4 before dissolving into ambient silence as the camera pulls away into the mountains.",
+        "subject_definitions:\n<Subject 1> is the young woman in <Picture 1>, with young woman with dark brown hair pulled back into a loose ponytail, featuring bangs framing her face.\n<Subject 2> is the character in <Picture 2>, with ornate golden medallion or plaque featuring intricate Chinese calligraphy characters arranged in a symmetrical circular.\n<Video 1> is the source video in <Video 1>, with motion and camera rhythm: The sequence depicts a slow, meditative pull-back shot (dolly out) of an elderly sage meditating on a wooden platform atop a snowy mountain peak. The camera starts in a medium close-up, focusing on the figure's serene expression and flowing white beard, then gradually retreats to reveal the vast, misty mountain range surrounding him. The subject remains largely static in a lotus position, holding a staff, while environmental elements like wind-swept hair and rising fog create a sense of slow, deliberate pacing and atmospheric depth..\n<Audio 1> is the audio track in <Audio 1>, providing voice timbre and synchronization: [Audio file identified. LLM analysis not supported.].\n\nsummary:\n[reference generation] A 10.0-second live-action sequence executing the requested visual narrative across shots using the defined references.\n\nretention_analysis:\n<Subject 1> (appears in [Shot 1], [Shot 2], [Shot 3], [Shot 4]): fully_preserved - young woman with dark brown hair pulled back into a loose ponytail, featuring bangs framing her face maintained.\n<Subject 2> (appears in [Shot 1], [Shot 2], [Shot 3], [Shot 4]): fully_preserved - ornate golden medallion or plaque featuring intricate Chinese calligraphy characters arranged in a symmetrical circular maintained.\n<Video 1> (camera and motion): weak_reference - motion timing and camera work followed in [Shot 3], [Shot 4].\n<Audio 1>: reference - voice timbre and audio synchronization maintained.\n\ndetailed_description:\n[Shot 1] The camera begins an extreme close-up, pushing in slowly at a gentle, meditative pace. Cradled in the bare palms of <Picture 1> — her weathered, earth-toned hands framing something ancient — rests the golden medallion from <Picture 2>, its ornate calligraphy catching a thin streak of alpine rim light. The navy-blue lacquer within the engraving glows with a cold luminescence against the warm molten gold of the metal. Her fingers tremble imperceptibly, as if the weight of centuries rests on her skin. A whisper of wind stirs, and a single snowflake lands on the medallion’s edge before melting. The lens, an anamorphic 35mm with a shallow depth of field, traces a low‑angle orbital track that keeps the medallion in sharp focus while the background softens into a blurred tapestry of alpine textures. Volumetric lighting lifts the scene from below, casting subtle highlights and shadows that emphasize the texture of the metal and the moisture in the air. As the camera creeps forward, the light refracts through the lacquer, revealing microscopic imperfections that tell a story of age and devotion. The sound of the wind is almost silent, save for the faint tap of the snowflake as it touches the gold, creating an auditory cue that matches the visual rhythm. The entire sequence feels like a quiet reverence, a moment suspended in time that invites the viewer to feel the weight of history and the intimacy of human touch.\n\n[Shot 2 | 00:02.500 – 00:05.000]\nThe camera pulls back and tilts up into a medium shot from behind <Picture 1>, now standing at the edge of a weathered wooden platform perched on a snow-covered mountain peak. The wind lifts the hem of her olive shirt and sweeps her ponytail across her shoulder as she raises the golden medallion slightly in her grip — <Picture 2> glowing like a captured sun against the desaturated blue-white expanse. Ahead of her, only empty sky, drifting mist, and jagged rock faces. She stands small and vulnerable against the vastness, her bare feet planted firmly on the cold wood. The camera holds still for a breath, letting the silence speak.\n\n[Shot 3 | 00:05.000 – 00:07.500]\nA reverse angle reveals what she faces: <Video 1>, the elderly sage, seated in perfect lotus position on the far edge of the platform, his white beard and hair drifting like smoke in the mountain wind. Diffuse sky light backlights his silhouette, rendering him almost ethereal — a living monument against the cold alpine palette. <Picture 1> 's out-of-focus shoulder and the golden flash of <Picture 2> occupy the near foreground, anchoring our perspective to her awe. He does not move. He does not need to. The camera holds a holy stillness, the world holding its breath with him.\n\n[Shot 4 | 00:07.500 – 00:10.000]\nThe camera initiates a slow, expansive dolly-out, adopting the meditative pacing language of <Video 1> — retreating steadily from the two figures to unveil an immense, mist-shrouded mountain range dissolving into infinity. Snow drifts lazily through the frame like falling time. <Picture 1> 's small olive silhouette and <Video 1> 's white ghost become twin points of warmth in a world of cold blue and white. The golden medallion from <Picture 2> flashes once — a final, defiant spark of heritage in the backlight — as she lowers her hands. The journey ends not with a word, but with presence.\n\noverall_soundscape:\nThin mountain wind whistling across wooden planks, the soft crunch of snow beneath bare feet, a single metallic chime as the medallion catches the light, and a quiet, steady exhale from the woman as she lowers her hands.\n\nnon_diegetic_music:\nA sparse, atmospheric score beginning with a solitary cello drone at 60 BPM, gradually joined by distant Tibetan singing bowls and a faint high-string harmonic that swells gently across Shot 4 before dissolving into ambient silence as the camera pulls away into the mountains."
+      ],
+      "widgets_values_named": {
+        "_stored_prompt": "subject_definitions:\n<Subject 1> is the young woman in <Picture 1>, with young woman with dark brown hair pulled back into a loose ponytail, featuring bangs framing her face.\n<Subject 2> is the character in <Picture 2>, with ornate golden medallion or plaque featuring intricate Chinese calligraphy characters arranged in a symmetrical circular.\n<Video 1> is the source video in <Video 1>, with motion and camera rhythm: The sequence depicts a slow, meditative pull-back shot (dolly out) of an elderly sage meditating on a wooden platform atop a snowy mountain peak. The camera starts in a medium close-up, focusing on the figure's serene expression and flowing white beard, then gradually retreats to reveal the vast, misty mountain range surrounding him. The subject remains largely static in a lotus position, holding a staff, while environmental elements like wind-swept hair and rising fog create a sense of slow, deliberate pacing and atmospheric depth..\n<Audio 1> is the audio track in <Audio 1>, providing voice timbre and synchronization: [Audio file identified. LLM analysis not supported.].\n\nsummary:\n[reference generation] A 10.0-second live-action sequence executing the requested visual narrative across shots using the defined references.\n\nretention_analysis:\n<Subject 1> (appears in [Shot 1], [Shot 2], [Shot 3], [Shot 4]): fully_preserved - young woman with dark brown hair pulled back into a loose ponytail, featuring bangs framing her face maintained.\n<Subject 2> (appears in [Shot 1], [Shot 2], [Shot 3], [Shot 4]): fully_preserved - ornate golden medallion or plaque featuring intricate Chinese calligraphy characters arranged in a symmetrical circular maintained.\n<Video 1> (camera and motion): weak_reference - motion timing and camera work followed in [Shot 3], [Shot 4].\n<Audio 1>: reference - voice timbre and audio synchronization maintained.\n\ndetailed_description:\n[Shot 1] The camera begins an extreme close-up, pushing in slowly at a gentle, meditative pace. Cradled in the bare palms of <Picture 1> — her weathered, earth-toned hands framing something ancient — rests the golden medallion from <Picture 2>, its ornate calligraphy catching a thin streak of alpine rim light. The navy-blue lacquer within the engraving glows with a cold luminescence against the warm molten gold of the metal. Her fingers tremble imperceptibly, as if the weight of centuries rests on her skin. A whisper of wind stirs, and a single snowflake lands on the medallion’s edge before melting. The lens, an anamorphic 35mm with a shallow depth of field, traces a low‑angle orbital track that keeps the medallion in sharp focus while the background softens into a blurred tapestry of alpine textures. Volumetric lighting lifts the scene from below, casting subtle highlights and shadows that emphasize the texture of the metal and the moisture in the air. As the camera creeps forward, the light refracts through the lacquer, revealing microscopic imperfections that tell a story of age and devotion. The sound of the wind is almost silent, save for the faint tap of the snowflake as it touches the gold, creating an auditory cue that matches the visual rhythm. The entire sequence feels like a quiet reverence, a moment suspended in time that invites the viewer to feel the weight of history and the intimacy of human touch.\n\n[Shot 2 | 00:02.500 – 00:05.000]\nThe camera pulls back and tilts up into a medium shot from behind <Picture 1>, now standing at the edge of a weathered wooden platform perched on a snow-covered mountain peak. The wind lifts the hem of her olive shirt and sweeps her ponytail across her shoulder as she raises the golden medallion slightly in her grip — <Picture 2> glowing like a captured sun against the desaturated blue-white expanse. Ahead of her, only empty sky, drifting mist, and jagged rock faces. She stands small and vulnerable against the vastness, her bare feet planted firmly on the cold wood. The camera holds still for a breath, letting the silence speak.\n\n[Shot 3 | 00:05.000 – 00:07.500]\nA reverse angle reveals what she faces: <Video 1>, the elderly sage, seated in perfect lotus position on the far edge of the platform, his white beard and hair drifting like smoke in the mountain wind. Diffuse sky light backlights his silhouette, rendering him almost ethereal — a living monument against the cold alpine palette. <Picture 1> 's out-of-focus shoulder and the golden flash of <Picture 2> occupy the near foreground, anchoring our perspective to her awe. He does not move. He does not need to. The camera holds a holy stillness, the world holding its breath with him.\n\n[Shot 4 | 00:07.500 – 00:10.000]\nThe camera initiates a slow, expansive dolly-out, adopting the meditative pacing language of <Video 1> — retreating steadily from the two figures to unveil an immense, mist-shrouded mountain range dissolving into infinity. Snow drifts lazily through the frame like falling time. <Picture 1> 's small olive silhouette and <Video 1> 's white ghost become twin points of warmth in a world of cold blue and white. The golden medallion from <Picture 2> flashes once — a final, defiant spark of heritage in the backlight — as she lowers her hands. The journey ends not with a word, but with presence.\n\noverall_soundscape:\nThin mountain wind whistling across wooden planks, the soft crunch of snow beneath bare feet, a single metallic chime as the medallion catches the light, and a quiet, steady exhale from the woman as she lowers her hands.\n\nnon_diegetic_music:\nA sparse, atmospheric score beginning with a solitary cello drone at 60 BPM, gradually joined by distant Tibetan singing bowls and a faint high-string harmonic that swells gently across Shot 4 before dissolving into ambient silence as the camera pulls away into the mountains.",
+        "_preview_panel": "subject_definitions:\n<Subject 1> is the young woman in <Picture 1>, with young woman with dark brown hair pulled back into a loose ponytail, featuring bangs framing her face.\n<Subject 2> is the character in <Picture 2>, with ornate golden medallion or plaque featuring intricate Chinese calligraphy characters arranged in a symmetrical circular.\n<Video 1> is the source video in <Video 1>, with motion and camera rhythm: The sequence depicts a slow, meditative pull-back shot (dolly out) of an elderly sage meditating on a wooden platform atop a snowy mountain peak. The camera starts in a medium close-up, focusing on the figure's serene expression and flowing white beard, then gradually retreats to reveal the vast, misty mountain range surrounding him. The subject remains largely static in a lotus position, holding a staff, while environmental elements like wind-swept hair and rising fog create a sense of slow, deliberate pacing and atmospheric depth..\n<Audio 1> is the audio track in <Audio 1>, providing voice timbre and synchronization: [Audio file identified. LLM analysis not supported.].\n\nsummary:\n[reference generation] A 10.0-second live-action sequence executing the requested visual narrative across shots using the defined references.\n\nretention_analysis:\n<Subject 1> (appears in [Shot 1], [Shot 2], [Shot 3], [Shot 4]): fully_preserved - young woman with dark brown hair pulled back into a loose ponytail, featuring bangs framing her face maintained.\n<Subject 2> (appears in [Shot 1], [Shot 2], [Shot 3], [Shot 4]): fully_preserved - ornate golden medallion or plaque featuring intricate Chinese calligraphy characters arranged in a symmetrical circular maintained.\n<Video 1> (camera and motion): weak_reference - motion timing and camera work followed in [Shot 3], [Shot 4].\n<Audio 1>: reference - voice timbre and audio synchronization maintained.\n\ndetailed_description:\n[Shot 1] The camera begins an extreme close-up, pushing in slowly at a gentle, meditative pace. Cradled in the bare palms of <Picture 1> — her weathered, earth-toned hands framing something ancient — rests the golden medallion from <Picture 2>, its ornate calligraphy catching a thin streak of alpine rim light. The navy-blue lacquer within the engraving glows with a cold luminescence against the warm molten gold of the metal. Her fingers tremble imperceptibly, as if the weight of centuries rests on her skin. A whisper of wind stirs, and a single snowflake lands on the medallion’s edge before melting. The lens, an anamorphic 35mm with a shallow depth of field, traces a low‑angle orbital track that keeps the medallion in sharp focus while the background softens into a blurred tapestry of alpine textures. Volumetric lighting lifts the scene from below, casting subtle highlights and shadows that emphasize the texture of the metal and the moisture in the air. As the camera creeps forward, the light refracts through the lacquer, revealing microscopic imperfections that tell a story of age and devotion. The sound of the wind is almost silent, save for the faint tap of the snowflake as it touches the gold, creating an auditory cue that matches the visual rhythm. The entire sequence feels like a quiet reverence, a moment suspended in time that invites the viewer to feel the weight of history and the intimacy of human touch.\n\n[Shot 2 | 00:02.500 – 00:05.000]\nThe camera pulls back and tilts up into a medium shot from behind <Picture 1>, now standing at the edge of a weathered wooden platform perched on a snow-covered mountain peak. The wind lifts the hem of her olive shirt and sweeps her ponytail across her shoulder as she raises the golden medallion slightly in her grip — <Picture 2> glowing like a captured sun against the desaturated blue-white expanse. Ahead of her, only empty sky, drifting mist, and jagged rock faces. She stands small and vulnerable against the vastness, her bare feet planted firmly on the cold wood. The camera holds still for a breath, letting the silence speak.\n\n[Shot 3 | 00:05.000 – 00:07.500]\nA reverse angle reveals what she faces: <Video 1>, the elderly sage, seated in perfect lotus position on the far edge of the platform, his white beard and hair drifting like smoke in the mountain wind. Diffuse sky light backlights his silhouette, rendering him almost ethereal — a living monument against the cold alpine palette. <Picture 1> 's out-of-focus shoulder and the golden flash of <Picture 2> occupy the near foreground, anchoring our perspective to her awe. He does not move. He does not need to. The camera holds a holy stillness, the world holding its breath with him.\n\n[Shot 4 | 00:07.500 – 00:10.000]\nThe camera initiates a slow, expansive dolly-out, adopting the meditative pacing language of <Video 1> — retreating steadily from the two figures to unveil an immense, mist-shrouded mountain range dissolving into infinity. Snow drifts lazily through the frame like falling time. <Picture 1> 's small olive silhouette and <Video 1> 's white ghost become twin points of warmth in a world of cold blue and white. The golden medallion from <Picture 2> flashes once — a final, defiant spark of heritage in the backlight — as she lowers her hands. The journey ends not with a word, but with presence.\n\noverall_soundscape:\nThin mountain wind whistling across wooden planks, the soft crunch of snow beneath bare feet, a single metallic chime as the medallion catches the light, and a quiet, steady exhale from the woman as she lowers her hands.\n\nnon_diegetic_music:\nA sparse, atmospheric score beginning with a solitary cello drone at 60 BPM, gradually joined by distant Tibetan singing bowls and a faint high-string harmonic that swells gently across Shot 4 before dissolving into ambient silence as the camera pulls away into the mountains."
+      }
+    },
+    {
+      "id": 7,
+      "type": "H3_PromptEditor",
+      "pos": [
+        1147.2801958714504,
+        469.6210222417757
+      ],
+      "size": [
+        559.875,
+        712.71875
+      ],
+      "flags": {
+        "min_width": 400,
+        "min_height": 200
+      },
+      "order": 4,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "prompt",
+          "shape": 7,
+          "type": "STRING",
+          "link": 7
+        }
+      ],
+      "outputs": [
+        {
+          "name": "PROMPT",
+          "type": "STRING",
+          "links": [
+            8
+          ]
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "H3_PromptEditor",
+        "ue_properties": {
+          "widget_ue_connectable": {},
+          "input_ue_unconnectable": {},
+          "version": "7.8"
+        }
+      },
+      "widgets_values": [
+        "{\n    \"<Picture 1>\": \"A young woman with dark brown hair pulled back into a loose ponytail, featuring bangs framing her face. She has fair skin, delicate features with a neutral expression, and is wearing an olive green button-up utility shirt with rolled sleeves and distressed blue jeans with cuffed hems. She is barefoot.\",\n    \"<Picture 2>\": \"An ornate golden medallion or plaque featuring intricate Chinese calligraphy characters arranged in a symmetrical circular design. The central character is largest, surrounded by smaller characters in circular frames, all set against a deep navy blue background with elaborate decorative patterns and scrollwork.\",\n    \"<Video 1>\": \"The sequence depicts a slow, meditative pull-back shot (dolly out) of an elderly sage meditating on a wooden platform atop a snowy mountain peak. The camera starts in a medium close-up, focusing on the figure's serene expression and flowing white beard, then gradually retreats to reveal the vast, misty mountain range surrounding him. The subject remains largely static in a lotus position, holding a staff, while environmental elements like wind-swept hair and rising fog create a sense of slow, deliberate pacing and atmospheric depth.\",\n    \"<Audio 1>\": \"[Audio file identified. LLM analysis not supported.]\",\n    \"_media_keys\": [\n        \"<Picture 1>\",\n        \"<Picture 2>\",\n        \"<Video 1>\",\n        \"<Audio 1>\"\n    ]\n}",
+        "{\n    \"<Picture 1>\": \"A young woman with dark brown hair pulled back into a loose ponytail, featuring bangs framing her face. She has fair skin, delicate features with a neutral expression, and is wearing an olive green button-up utility shirt with rolled sleeves and distressed blue jeans with cuffed hems. She is barefoot.\",\n    \"<Picture 2>\": \"An ornate golden medallion or plaque featuring intricate Chinese calligraphy characters arranged in a symmetrical circular design. The central character is largest, surrounded by smaller characters in circular frames, all set against a deep navy blue background with elaborate decorative patterns and scrollwork.\",\n    \"<Video 1>\": \"The sequence depicts a slow, meditative pull-back shot (dolly out) of an elderly sage meditating on a wooden platform atop a snowy mountain peak. The camera starts in a medium close-up, focusing on the figure's serene expression and flowing white beard, then gradually retreats to reveal the vast, misty mountain range surrounding him. The subject remains largely static in a lotus position, holding a staff, while environmental elements like wind-swept hair and rising fog create a sense of slow, deliberate pacing and atmospheric depth.\",\n    \"<Audio 1>\": \"[Audio file identified. LLM analysis not supported.]\",\n    \"_media_keys\": [\n        \"<Picture 1>\",\n        \"<Picture 2>\",\n        \"<Video 1>\",\n        \"<Audio 1>\"\n    ]\n}"
+      ],
+      "widgets_values_named": {
+        "_stored_prompt": "{\n    \"<Picture 1>\": \"A young woman with dark brown hair pulled back into a loose ponytail, featuring bangs framing her face. She has fair skin, delicate features with a neutral expression, and is wearing an olive green button-up utility shirt with rolled sleeves and distressed blue jeans with cuffed hems. She is barefoot.\",\n    \"<Picture 2>\": \"An ornate golden medallion or plaque featuring intricate Chinese calligraphy characters arranged in a symmetrical circular design. The central character is largest, surrounded by smaller characters in circular frames, all set against a deep navy blue background with elaborate decorative patterns and scrollwork.\",\n    \"<Video 1>\": \"The sequence depicts a slow, meditative pull-back shot (dolly out) of an elderly sage meditating on a wooden platform atop a snowy mountain peak. The camera starts in a medium close-up, focusing on the figure's serene expression and flowing white beard, then gradually retreats to reveal the vast, misty mountain range surrounding him. The subject remains largely static in a lotus position, holding a staff, while environmental elements like wind-swept hair and rising fog create a sense of slow, deliberate pacing and atmospheric depth.\",\n    \"<Audio 1>\": \"[Audio file identified. LLM analysis not supported.]\",\n    \"_media_keys\": [\n        \"<Picture 1>\",\n        \"<Picture 2>\",\n        \"<Video 1>\",\n        \"<Audio 1>\"\n    ]\n}",
+        "_preview_panel": "{\n    \"<Picture 1>\": \"A young woman with dark brown hair pulled back into a loose ponytail, featuring bangs framing her face. She has fair skin, delicate features with a neutral expression, and is wearing an olive green button-up utility shirt with rolled sleeves and distressed blue jeans with cuffed hems. She is barefoot.\",\n    \"<Picture 2>\": \"An ornate golden medallion or plaque featuring intricate Chinese calligraphy characters arranged in a symmetrical circular design. The central character is largest, surrounded by smaller characters in circular frames, all set against a deep navy blue background with elaborate decorative patterns and scrollwork.\",\n    \"<Video 1>\": \"The sequence depicts a slow, meditative pull-back shot (dolly out) of an elderly sage meditating on a wooden platform atop a snowy mountain peak. The camera starts in a medium close-up, focusing on the figure's serene expression and flowing white beard, then gradually retreats to reveal the vast, misty mountain range surrounding him. The subject remains largely static in a lotus position, holding a staff, while environmental elements like wind-swept hair and rising fog create a sense of slow, deliberate pacing and atmospheric depth.\",\n    \"<Audio 1>\": \"[Audio file identified. LLM analysis not supported.]\",\n    \"_media_keys\": [\n        \"<Picture 1>\",\n        \"<Picture 2>\",\n        \"<Video 1>\",\n        \"<Audio 1>\"\n    ]\n}"
+      }
+    },
+    {
+      "id": 8,
       "type": "H3_Promptor",
       "pos": [
-        767.57437799253,
-        4823.481004269322
+        1737.2176958714504,
+        469.6210222417757
       ],
       "size": [
         400,
-        344
+        394
       ],
       "flags": {},
       "order": 6,
@@ -23,7 +238,7 @@
           "name": "vision_context",
           "shape": 7,
           "type": "STRING",
-          "link": 277
+          "link": 8
         }
       ],
       "outputs": [
@@ -31,7 +246,8 @@
           "name": "PROMPT",
           "type": "STRING",
           "links": [
-            271
+            9,
+            11
           ]
         },
         {
@@ -56,24 +272,24 @@
       "widgets_values": [
         "Auto",
         "",
-        5,
+        10,
         "Auto",
         "Auto",
         "Auto",
         "English",
-        "qwen3.5-4b_q4_k_m (Huihui-Qwen3.5-4B-abliterated.Q4_K_M.gguf)",
+        "agnes-ai (agnes-2.5-flash)",
         0.7,
         4096
       ],
       "widgets_values_named": {
         "task_type": "Auto",
         "scene_direction": "",
-        "duration": 5,
+        "duration": 10,
         "reference_images": "Auto",
         "reference_videos": "Auto",
         "reference_audios": "Auto",
         "output_language": "English",
-        "provider": "qwen3.5-4b_q4_k_m (Huihui-Qwen3.5-4B-abliterated.Q4_K_M.gguf)",
+        "provider": "agnes-ai (agnes-2.5-flash)",
         "temperature": 0.7,
         "max_tokens": 4096
       },
@@ -81,127 +297,97 @@
       "bgcolor": "#3b3850ff"
     },
     {
-      "id": 176,
-      "type": "H3_Vision",
+      "id": 9,
+      "type": "PreviewAny",
       "pos": [
-        -159.0344837331694,
-        4823.481004269322
+        1136.9676958714504,
+        1230.1876221472592
       ],
       "size": [
-        440,
-        667
+        572.671875,
+        461.5
       ],
       "flags": {},
-      "order": 4,
+      "order": 5,
       "mode": 0,
       "inputs": [
         {
-          "label": "image_0",
-          "name": "ref_images.image_0",
-          "shape": 7,
-          "type": "IMAGE",
-          "link": 273
-        },
-        {
-          "label": "image_1",
-          "name": "ref_images.image_1",
-          "shape": 7,
-          "type": "IMAGE",
-          "link": 274
-        },
-        {
-          "label": "image_2",
-          "name": "ref_images.image_2",
-          "shape": 7,
-          "type": "IMAGE",
-          "link": null
-        },
-        {
-          "label": "video_0",
-          "name": "ref_videos.video_0",
-          "shape": 7,
-          "type": "VIDEO",
-          "link": 275
-        },
-        {
-          "label": "video_1",
-          "name": "ref_videos.video_1",
-          "shape": 7,
-          "type": "VIDEO",
-          "link": null
-        },
-        {
-          "label": "audio_0",
-          "name": "ref_audios.audio_0",
-          "shape": 7,
-          "type": "AUDIO",
-          "link": 276
-        },
-        {
-          "label": "audio_1",
-          "name": "ref_audios.audio_1",
-          "shape": 7,
-          "type": "AUDIO",
-          "link": null
+          "name": "source",
+          "type": "*",
+          "link": 10
         }
       ],
       "outputs": [
         {
-          "name": "VISION_CONTEXT",
+          "name": "STRING",
           "type": "STRING",
-          "links": [
-            272
-          ]
-        },
-        {
-          "name": "REF_IMAGES",
-          "type": "IMAGE",
           "links": null
         }
       ],
       "properties": {
-        "Node name for S&R": "H3_Vision",
+        "cnr_id": "comfy-core",
+        "ver": "0.33.3",
+        "Node name for S&R": "PreviewAny",
         "ue_properties": {
           "widget_ue_connectable": {},
           "input_ue_unconnectable": {},
           "version": "7.8"
         }
       },
-      "widgets_values": [
-        "Subject / Identity",
-        "Comprehensive",
-        "",
-        "English",
-        "qwen3.5-4b_q4_k_m (Huihui-Qwen3.5-4B-abliterated.Q4_K_M.gguf)",
-        0.2,
-        2048,
-        "",
-        ""
-      ],
-      "widgets_values_named": {
-        "global_image_mode": "Subject / Identity",
-        "global_video_mode": "Comprehensive",
-        "_media_state": "",
-        "output_language": "English",
-        "provider": "qwen3.5-4b_q4_k_m (Huihui-Qwen3.5-4B-abliterated.Q4_K_M.gguf)",
-        "temperature": 0.2,
-        "max_tokens": 2048,
-        "custom_prompt_override": "",
-        "gh_vision_panel": ""
-      },
-      "color": "#221f33ff",
-      "bgcolor": "#3b3850ff"
+      "widgets_values": [],
+      "widgets_values_named": {}
     },
     {
-      "id": 48,
-      "type": "AILab_LoadImageSimple",
+      "id": 10,
+      "type": "PreviewAny",
       "pos": [
-        -690.8773044947463,
-        4823.481004269322
+        3168.8730262957542,
+        469.6210222417757
       ],
       "size": [
-        520.3261401846053,
-        461.2338839631266
+        731.40625,
+        1089.6875
+      ],
+      "flags": {},
+      "order": 8,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "source",
+          "type": "*",
+          "link": 11
+        }
+      ],
+      "outputs": [
+        {
+          "name": "STRING",
+          "type": "STRING",
+          "links": null
+        }
+      ],
+      "properties": {
+        "cnr_id": "comfy-core",
+        "ver": "0.33.3",
+        "Node name for S&R": "PreviewAny",
+        "ue_properties": {
+          "widget_ue_connectable": {},
+          "input_ue_unconnectable": {},
+          "version": "7.8"
+        }
+      },
+      "widgets_values": [],
+      "widgets_values_named": {}
+    },
+    {
+      "id": 16,
+      "type": "LoadVideo",
+      "pos": [
+        281.96001331824976,
+        613.0897722417757
+      ],
+      "size": [
+        372.875,
+        669.703125
       ],
       "flags": {},
       "order": 0,
@@ -209,32 +395,17 @@
       "inputs": [],
       "outputs": [
         {
-          "name": "IMAGE",
-          "type": "IMAGE",
+          "name": "VIDEO",
+          "type": "VIDEO",
           "links": [
-            273
+            13
           ]
-        },
-        {
-          "name": "MASK",
-          "type": "MASK",
-          "links": null
-        },
-        {
-          "name": "WIDTH",
-          "type": "INT",
-          "links": null
-        },
-        {
-          "name": "HEIGHT",
-          "type": "INT",
-          "links": null
         }
       ],
       "properties": {
-        "cnr_id": "comfyui-rmbg",
-        "ver": "a1ca256ce5ef3d2d990935415bad76c4269aa80d",
-        "Node name for S&R": "AILab_LoadImageSimple",
+        "cnr_id": "comfy-core",
+        "ver": "0.33.3",
+        "Node name for S&R": "LoadVideo",
         "ue_properties": {
           "widget_ue_connectable": {},
           "input_ue_unconnectable": {},
@@ -242,28 +413,24 @@
         }
       },
       "widgets_values": [
-        "",
-        "14.webp",
+        "82510558.mp4",
         "image"
       ],
       "widgets_values_named": {
-        "image_path_or_URL": "",
-        "image": "14.webp",
+        "file": "82510558.mp4",
         "upload": "image"
-      },
-      "color": "#2e3e57",
-      "bgcolor": "#4b5b73"
+      }
     },
     {
-      "id": 46,
-      "type": "AILab_LoadImageSimple",
+      "id": 17,
+      "type": "LoadAudio",
       "pos": [
-        -1031.5229321866434,
-        4823.481004269322
+        226.87655119056427,
+        1327.5562613623688
       ],
       "size": [
-        329.1289471149254,
-        461.2338839631266
+        425.625,
+        138
       ],
       "flags": {},
       "order": 1,
@@ -271,72 +438,10 @@
       "inputs": [],
       "outputs": [
         {
-          "name": "IMAGE",
-          "type": "IMAGE",
-          "links": [
-            274
-          ]
-        },
-        {
-          "name": "MASK",
-          "type": "MASK",
-          "links": null
-        },
-        {
-          "name": "WIDTH",
-          "type": "INT",
-          "links": null
-        },
-        {
-          "name": "HEIGHT",
-          "type": "INT",
-          "links": null
-        }
-      ],
-      "properties": {
-        "cnr_id": "comfyui-rmbg",
-        "ver": "a1ca256ce5ef3d2d990935415bad76c4269aa80d",
-        "Node name for S&R": "AILab_LoadImageSimple",
-        "ue_properties": {
-          "widget_ue_connectable": {},
-          "input_ue_unconnectable": {},
-          "version": "7.8"
-        }
-      },
-      "widgets_values": [
-        "",
-        "Architecture.png",
-        "image"
-      ],
-      "widgets_values_named": {
-        "image_path_or_URL": "",
-        "image": "Architecture.png",
-        "upload": "image"
-      },
-      "color": "#2e3e57",
-      "bgcolor": "#4b5b73"
-    },
-    {
-      "id": 179,
-      "type": "LoadAudio",
-      "pos": [
-        -453.3499924351411,
-        5354.481004269322
-      ],
-      "size": [
-        282.798828125,
-        136
-      ],
-      "flags": {},
-      "order": 2,
-      "mode": 0,
-      "inputs": [],
-      "outputs": [
-        {
           "name": "AUDIO",
           "type": "AUDIO",
           "links": [
-            276
+            14
           ]
         }
       ],
@@ -351,43 +456,58 @@
         }
       },
       "widgets_values": [
-        "2022-02-20 15-03-08.mkv",
+        "ComfyUI-qwenasr_00003_.mp3",
         null,
         null
       ],
       "widgets_values_named": {
-        "audio": "2022-02-20 15-03-08.mkv",
+        "audio": "ComfyUI-qwenasr_00003_.mp3",
         "upload": null
       }
     },
     {
-      "id": 169,
-      "type": "LoadVideo",
+      "id": 18,
+      "type": "AILab_LoadImage",
       "pos": [
-        -784.2187784817974,
-        5342.881152199356
+        -71.85038594285369,
+        469.6210222417757
       ],
       "size": [
-        313.54222717449954,
-        544.3133407617493
+        336.234375,
+        813.1875
       ],
       "flags": {},
-      "order": 3,
+      "order": 2,
       "mode": 0,
       "inputs": [],
       "outputs": [
         {
-          "name": "VIDEO",
-          "type": "VIDEO",
+          "name": "IMAGE",
+          "type": "IMAGE",
           "links": [
-            275
+            15
           ]
+        },
+        {
+          "name": "MASK",
+          "type": "MASK",
+          "links": null
+        },
+        {
+          "name": "WIDTH",
+          "type": "INT",
+          "links": null
+        },
+        {
+          "name": "HEIGHT",
+          "type": "INT",
+          "links": null
         }
       ],
       "properties": {
-        "cnr_id": "comfy-core",
-        "ver": "0.30.2",
-        "Node name for S&R": "LoadVideo",
+        "cnr_id": "comfyui-rmbg",
+        "ver": "a1ca256ce5ef3d2d990935415bad76c4269aa80d",
+        "Node name for S&R": "AILab_LoadImage",
         "ue_properties": {
           "widget_ue_connectable": {},
           "input_ue_unconnectable": {},
@@ -395,169 +515,107 @@
         }
       },
       "widgets_values": [
-        "BonanzaGen-video-df3c7e93-66cb-4f2b-a00b-a4639903ee3a-1-1.mp4",
+        "",
+        "10.webp",
+        "lanczos",
+        0,
+        1,
+        "longest_side",
+        0,
         "image"
       ],
       "widgets_values_named": {
-        "file": "BonanzaGen-video-df3c7e93-66cb-4f2b-a00b-a4639903ee3a-1-1.mp4",
+        "image_path_or_URL": "",
+        "image": "10.webp",
+        "upscale_method": "lanczos",
+        "megapixels": 0,
+        "scale_by": 1,
+        "resize_mode": "longest_side",
+        "size": 0,
         "upload": "image"
-      }
-    },
-    {
-      "id": 174,
-      "type": "PreviewAny",
-      "pos": [
-        292.4821968438023,
-        4823.481004269322
-      ],
-      "size": [
-        464.9586466031851,
-        750.0891604142635
-      ],
-      "flags": {},
-      "order": 5,
-      "mode": 0,
-      "inputs": [
-        {
-          "name": "source",
-          "type": "*",
-          "link": 272
-        }
-      ],
-      "outputs": [
-        {
-          "name": "STRING",
-          "type": "STRING",
-          "links": [
-            277
-          ]
-        }
-      ],
-      "properties": {
-        "cnr_id": "comfy-core",
-        "ver": "0.30.2",
-        "Node name for S&R": "PreviewAny",
-        "ue_properties": {
-          "widget_ue_connectable": {},
-          "input_ue_unconnectable": {},
-          "version": "7.8"
-        }
       },
-      "widgets_values": [],
-      "widgets_values_named": {}
-    },
-    {
-      "id": 175,
-      "type": "PreviewAny",
-      "pos": [
-        1179.0910585695017,
-        4823.481004269322
-      ],
-      "size": [
-        663.2268787563894,
-        912.1076267692188
-      ],
-      "flags": {},
-      "order": 7,
-      "mode": 0,
-      "inputs": [
-        {
-          "name": "source",
-          "type": "*",
-          "link": 271
-        }
-      ],
-      "outputs": [
-        {
-          "name": "STRING",
-          "type": "STRING",
-          "links": null
-        }
-      ],
-      "properties": {
-        "cnr_id": "comfy-core",
-        "ver": "0.30.2",
-        "Node name for S&R": "PreviewAny",
-        "ue_properties": {
-          "widget_ue_connectable": {},
-          "input_ue_unconnectable": {},
-          "version": "7.8"
-        }
-      },
-      "widgets_values": [],
-      "widgets_values_named": {}
+      "color": "#2e3e57",
+      "bgcolor": "#4b5b73"
     }
   ],
   "links": [
     [
-      271,
-      178,
+      7,
+      4,
       0,
-      175,
-      0,
-      "STRING"
-    ],
-    [
-      272,
-      176,
-      0,
-      174,
+      7,
       0,
       "STRING"
     ],
     [
-      273,
-      48,
+      8,
+      7,
       0,
-      176,
+      8,
       0,
-      "IMAGE"
+      "STRING"
     ],
     [
-      274,
-      46,
+      9,
+      8,
       0,
-      176,
-      1,
-      "IMAGE"
+      6,
+      0,
+      "STRING"
     ],
     [
-      275,
-      169,
+      10,
+      4,
       0,
-      176,
-      3,
+      9,
+      0,
+      "STRING"
+    ],
+    [
+      11,
+      8,
+      0,
+      10,
+      0,
+      "STRING"
+    ],
+    [
+      13,
+      16,
+      0,
+      4,
+      2,
       "VIDEO"
     ],
     [
-      276,
-      179,
+      14,
+      17,
       0,
-      176,
-      5,
+      4,
+      4,
       "AUDIO"
     ],
     [
-      277,
-      174,
+      15,
+      18,
       0,
-      178,
+      4,
       0,
-      "STRING"
+      "IMAGE"
     ]
   ],
   "groups": [],
   "config": {},
   "extra": {
     "ue_links": [],
+    "links_added_by_ue": [],
     "ds": {
-      "scale": 1.0247184822109252,
+      "scale": 0.5644739300537776,
       "offset": [
-        1113.5911318446967,
-        -4564.340694374261
+        733.221567665477,
+        421.0923934691952
       ]
     },
-    "links_added_by_ue": [],
     "frontendVersion": "1.49.6",
     "VHS_latentpreview": false,
     "VHS_latentpreviewrate": 0,
