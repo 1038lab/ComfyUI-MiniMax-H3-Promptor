@@ -4,9 +4,51 @@ A powerful, node-based automation suite for generating cinema-production-grade p
 
 This project provides a robust, decoupled architecture separating **multimodal visual analysis** from pure **text-based prompt structuring**, allowing for extreme customizability, precise scene description, and low API operating costs.
 
-![ComfyUI MiniMax H3-Promptor](example_workflows/Minimax-H3-Promptor_vision_V1.4.0.jpg)
+![ComfyUI MiniMax H3-Promptor](example_workflows/MiniMax-H3-Promptor.jpg)
 
-## What's New in V1.4.0 (2026/08/26)
+## What's New in V1.5.0 (2026/09/03)
+
+### ✍️ All-New Manual Prompt Composer & Cinematic Visual Upgrades
+
+V1.5.0 introduces the **`MiniMax H3 Manual Prompt Composer`**, a dedicated workspace for prompt engineering and rapid scripting, alongside an upgraded **`MiniMax H3 Prompt Preview & Edit`** node and a complete cinematic syntax color system.
+
+#### Key Highlights & Enhancements
+* **Dedicated Manual Composer (`H3_PromptComposer`)**: Switch and load 8 official task mode starter scaffolds (T2VA, I2VA, FL2VA, Ref2VA, V2VA, L2VA, A2V, etc.). Type `@`, `<`, or `[` anywhere in the editor to trigger instant floating autocomplete tag menus.
+* **Centered Refine Modal Viewport (`H3_PromptEditor` & `H3_PromptComposer`)**: Elegant centered frosted-glass modal overlay supporting fine-grained optimization for the entire prompt, text selections, individual shots (`[Shot N]`), individual subjects (`<Subject N>`), or specific sections with adaptive height.
+* **Unified Syntax Highlighting & Color System**: Cohesive dark matte palette with clear visual hierarchy across all suite nodes.
+
+### 🪄 Targeted & Global AI Prompt Refinement
+
+Inside both **`H3_PromptEditor`** (Preview & Edit) and **`H3_PromptComposer`** (Manual Composer), clicking the **`✨ Refine`** button in the toolbar opens a centered frosted-glass modal to rewrite, polish, and elevate prompts in seconds:
+
+#### 1. What Can It Do?
+* **Precision Targeted & Global AI Polishing**: Polish an entire prompt, a highlighted text snippet, an individual shot, a specific subject character, or a soundscape/music section without having to re-run expensive upstream workflows.
+
+#### 2. Available Scopes & Model Selection
+* **Target Scopes**:
+  * **`🌟 Entire Prompt`**: Executive Director perspective coordinating multi-section revisions (e.g. wardrobe, scene pacing, mood shifts) across the entire text.
+  * **`🎬 [Shot N]`**: Hollywood DP/Cinematographer perspective specializing in camera kinematics, optical depth of field, volumetric lighting, and tactile physical dynamics.
+  * **`👤 <Subject N>`**: Lead Concept Artist perspective specializing in costume fabrics, anatomy, facial features, and worn props (strictly without camera movements).
+  * **`📑 Section`**: Foley Artist / Composer perspective specializing in acoustic resonance and musical emotion.
+  * **`📝 Current Selection`**: In-line precision polishing for highlighted phrases or sentences.
+* **LLM Provider Switcher**: Dynamically switch between configured LLM providers (Claude, GPT-4o, Gemini, DeepSeek, local Qwen, etc.) directly in the bottom-left dropdown.
+
+#### 3. Core Features & Directing Principles
+* **Safe In-Modal Preview & 3-State Actions**: Refined results render with a green highlight preview inside the modal, supporting `[ Discard ]` (restores original preview without exiting), `[ 🔄 Retry ]` (re-runs generation from the original base), and `[ ✓ Apply ]` (commits to node).
+* **Instant A/B Version Toggle**: After applying, the node toolbar activates a prominent gold `[ ↩ Restore Original ]` button to instantly revert to the original prompt, and toggle between versions for effortless comparison.
+* **Structural & Timestamp Freezing**: Shot headers (e.g. `[Shot 1: 00:00.000 – 00:02.800]`) and subject tags (`<Subject 1> is `) are isolated and protected by the system, ensuring the LLM only polishes descriptive text without corrupting brackets or timestamps.
+* **Semantic Transposition & Fallback**: Cross-domain instructions (e.g., describing mountain scenery while refining a character) are transposed into character attire and lighting reflections. Nonsensical/irrelevant inputs automatically fall back to standard cinematic polishing without breaking the prompt.
+
+#### 4. How It Helps You
+* **Rapid Iteration**: Fix a single shot or phrase in seconds without re-running entire workflows.
+* **Schema Compliance Guarantee**: Structural headers and timing windows are preserved, ensuring prompts run seamlessly through MiniMax video samplers without syntax errors.
+* **Risk-Free Experimentation**: Double safety loop (in-modal preview/discard + 1-click A/B restore) allows experimentation with complete peace of mind.
+
+**[Read the full v1.5.0 Release Notes and Detailed Features here (updates.md)](updates.md#v150-20260903)**
+
+---
+
+## V1.4.0 (2026/08/26)
 
 ### Cross-Node Collaboration: Local Qwen & GGUF Integration via ComfyUI-QwenVL
 
@@ -23,6 +65,8 @@ By pairing these two custom nodes, you can now run local Qwen multimodal & LLM m
 *   **Thinking Mode Control**: Added instant `Disable Thinking (Fast)` toggles in Settings for Gemini, OpenAI-compatible, and Claude providers to eliminate latency and token overhead.
 
 **[Read the full v1.4.0 Release Notes and Detailed Features here (updates.md)](updates.md#v140-20260826)**
+
+---
 
 
 ## V1.3.0 (2026/08/18) 
@@ -229,6 +273,7 @@ Open the `templates/` directory. The `system_base.txt` controls global rules, wh
 ## Credits & Resources
 
 *   Developed by **[1038lab](https://github.com/1038lab)**.
+*   **Special Thanks & Acknowledgement**: Special thanks to **[duckyshell/ComfyUI-MiniMaxH3-Prompt-Writer](https://github.com/duckyshell/ComfyUI-MiniMaxH3-Prompt-Writer)** for inspiring valuable UI layout concepts and MiniMax cinematic prompt structuring workflows.
 *   **MiniMax H3 Specifications**: Designed specifically to interface with the core structural requirements given by MiniMax.
 
 ## License
