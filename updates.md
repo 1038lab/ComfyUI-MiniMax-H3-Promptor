@@ -1,4 +1,33 @@
 # ComfyUI-Minimax-H3-Promptor Update Log
+
+---
+
+## v1.5.0 (2026/09/03)
+
+### ✍️ All-New MiniMax H3 Manual Prompt Composer (`H3_PromptComposer`)
+- **Dedicated Manual Prompt Workshop**: Built specifically for manual cinematic scripting, prompt engineering, and quick shot scaffolding without relying on upstream AI generation.
+- **8 Standard Task Mode Scaffolds**: Pre-configured official templates for `T2VA` (Text-to-Video), `I2VA` (Image-to-Video), `FL2VA` (First & Last Frame), `Ref2VA` (Omni / Reference), `V2VA` (Video-to-Video), `L2VA` (Long Take), `A2V` (Audio-to-Video), and `Custom/Blank`. Switching modes automatically loads structured starter templates.
+- **Multi-Trigger Smart Autocomplete (`@`, `<`, `[` )**: Type `@`, `<`, or `[` anywhere in the editor (or click the top `+Tag` button) to invoke an interactive floating tag menu at the cursor. Quick keyboard navigation (`Up`/`Down`, `Enter`/`Tab`) to insert canonical `<Picture 1-4>`, `[Shot 1-4]`, `<Subject 1-2>`, `<Video 1>`, `<Audio 1>`, and section headers.
+- **Section Scaffolding & Clean Spacing**: Inserting major sections automatically includes standard cinematic descriptions with clean empty-line separation, placing the cursor directly on the next line for continuous writing.
+- **Typing & Caret Stability**: Completely eradicated caret jumping glitches upon pressing Enter, ensuring fluid and responsive typing.
+
+
+https://github.com/user-attachments/assets/3ecc233f-dc5b-4045-88e9-b50fd0050dfb
+
+
+### ✨ MiniMax H3 Prompt Preview & Edit (`H3_PromptEditor`) & AI Refine System
+- **Display Name Update**: Formally upgraded to **`MiniMax H3 Prompt Preview & Edit`** with seamless backward compatibility for existing workflows.
+- **Centered Floating Refine Modal Viewport**: Upgraded to an elegant centered frosted-glass modal overlay. Freely refine the entire prompt, selected text, individual shots (`[Shot N]`), individual subjects (`<Subject N>`), or specific sections with adaptive height.
+- **Safe In-Modal Preview & 3-State Actions (Discard / Retry / Apply)**: Refined text renders with green highlight preview inside the modal. Click `[ Discard ]` to revert the preview in-place without closing, `[ 🔄 Retry ]` to re-roll from the clean original base, or `[ ✓ Apply ]` to commit to the node.
+- **1-Click A/B State Toggle & Restore**: After applying, the node toolbar activates a prominent gold `[ ↩ Restore Original ]` button to instantly revert to the original prompt, and toggle between versions for effortless comparison.
+- **Structural & Timestamp Freezing**: Isolated shot headers (`[Shot N: MM:SS.mmm]`) and subject prefixes (`<Subject N> is `) to guarantee timestamps and brackets are never corrupted by LLM hallucinations.
+- **Target-Aware Directing & Semantic Transposition**: Tailored prompts for cinematographers (shots), concept artists (subjects), and audio designers (soundscapes/music). Transposes environmental instructions into subject attire/lighting, and gracefully falls back to cinematic polish on nonsensical inputs.
+- **Lock Protection & Live Sync**: Refined live synchronizations and overwrite protection, ensuring locked nodes preserve manual edits while unlocked nodes cleanly receive newly generated prompts.
+
+
+https://github.com/user-attachments/assets/df45c7de-6932-460f-8414-f8867c6875fb
+
+
 ---
 
 ## v1.4.0 (2026/08/26)
@@ -8,7 +37,6 @@
 - **Auto-Syncing JSON Catalog**: Directly synchronizes with `ComfyUI-QwenVL`'s `custom_models.json` (auto-maintained by its HuggingFace downloader) and `gguf_models.json`, requiring zero manual JSON editing.
 - **Opt-in & Zero Extra Bloat**: Pre-configured as disabled (`enabled: false`) by default in the Provider Settings panel, ensuring pure cloud/API users experience zero overhead.
 - **One-Click Connection Testing**: The Settings Panel `/minimax-h3/test_connection` endpoint automatically detects the local engine installation and reports catalog model count.
-<img width="640"  alt="qwenvl-cli" src="https://github.com/user-attachments/assets/37be3baf-2620-4df3-a186-ce6df3d9177c" />
 
 ### 🎬 Scene Direction & Creative Control Refinement (`H3_Promptor`)
 - **Renamed `description` to `scene_direction`**: Clearer semantic identity designating user plot instructions as the highest creative mandate.
@@ -20,9 +48,6 @@
 - **Dialogue & Voice Acting Tag Injection (`<d>[Language]...</d>`)**: Automatically extracts user-supplied speech/dialogue from descriptions and guarantees it is formatted as `<d>[Language]...</d>` and embedded into the `[Shot 1]` narrative timeline without duplicate nesting.
 - **Subject Shorthand Standardization**: Automatically normalizes standalone `S1`~`S20` mentions to the official MiniMax parenthesized format `(S1)`~`(S20)`.
 - **Media Filename Sanitization**: Automatically scrubs hallucinated raw media filenames (e.g. `image.png`, `video.mp4`) from final prompts.
-
-
-![ComfyUI MiniMax H3-Promptor](example_workflows/MiniMax-H3-Promptor.jpg)
 
 ### ⚡ Multi-Platform Thinking Mode Control (Reasoning/Thinking)
 - **Thinking Control Toggle (`Disable Thinking (Fast)`)**: Added a dedicated switch in the Settings Panel for OpenAI-compatible, Gemini, and Anthropic providers.
@@ -41,10 +66,9 @@
 - **New `length` output (INT)**: `H3_Promptor` node outputs a calculated `length` value using the model-required frame alignment formula: `max(5, round(duration × 24))` aligned to `% 17 == 5`.
 
 ---
-## V1.3.0 (2026/08/18)
 
-### (Hollywood AI Director & Full-Reference Architecture)
-![ComfyUI MiniMax H3-Promptor](example_workflows/MiniMax-H3-Promptor.jpg)
+## v1.3.0 (2026/08/18)
+Release Notes: (Hollywood AI Director & Full-Reference Architecture)
 
 ### 🎬 Major Highlight: The Two-Stage Hollywood AI Director & Screenwriter Engine
 - **Two-Stage Directing Pipeline**: Completely overhauled prompt generation from a rushed one-shot output into a rigorous two-stage film production workflow:
@@ -54,7 +78,6 @@
 - **User Custom Prompt as Supreme Mandate**: When you provide a custom prompt or scene wish, the director engine prioritizes it as the highest creative mandate, choreographing all uploaded actors, vehicles, and props to execute your exact vision.
 - **Ensemble Spatial Staging & Continuity**: Multiple references are composed together across Foreground, Midground, and Background layers with smooth transitions (Match on Action, Eyeline Match, Whip Pan).
 - **Physical Shot Budgeting (4s-15s)**: Strict pacing rules prevent video flicker by allocating at least 2.5s-4.0s per shot.
-<img width="3313" height="1353" alt="image" src="https://github.com/user-attachments/assets/e5e3f608-bcc0-42b4-86fd-a6157115259a" />
 
 ### 🌟 All-New Vision Analyzer V2 & Seamless List Expansion
 - **Pure Web DOM Drop-Zone Architecture**: Replaced clunky image/video PyTorch input slots with an intuitive in-node HTML/JS drag-and-drop panel. Drag and drop pictures, videos, and audios directly without wiring noodles.
@@ -73,19 +96,16 @@
 ### 🖥️ ComfyUI Real-Time Console Trace
 - **Step-by-Step Terminal Execution**: `H3_Promptor` node outputs the final prompt cleanly while printing beautifully styled, phase-by-phase execution banners (Stage 1 Blueprint, Stage 2 Storyboard, Final Assembly) directly to the ComfyUI terminal console for complete transparency!
 
-
 ---
-## V1.2.0 (2026/08/13)
-Release Notes: (Settings Hub & Core Architecture Overhaul)
+
+## Release Notes: v1.2.0 (Settings Hub & Core Architecture Overhaul)
 
 ### 🌟 Highlight: Native ComfyUI Settings Integration (API Hub)
-
 - **Centralized API Management**: Completely removed the clunky `api_key` and `model_name` input fields from the Node interfaces. We built a beautiful, native-feeling ComfyUI Settings Panel (under the Gear icon -> MiniMax H3 API Settings) to manage all providers in one place globally.
 - **Provider Connection Tester**: Added an inline ping-tester directly in the API Settings Panel. Instantly click "Test" to verify if your Base URL and Key are active, completely eliminating workflow mid-generation crashes due to bad auths.
 - **Hot-Reload Node Dropdowns**: Disabling a provider via the toggle switch now takes *instant* effect (just refresh the browser with `F5`). There is no longer any need to explicitly reboot the Python ComfyUI server to update Node dropdowns.
 - **Native Toggles**: Upgraded the settings UI to feature standard ComfyUI iOS-style visual toggle switches.
 - **Streamlined Custom Node UI**: The Python nodes now only ask you to select a `Provider` from a dynamic dropdown (which syncs automatically to your panel) and retain only `temperature` and `max_tokens` for on-the-fly workflow tuning.
-<img width="50%" alt="minimax-h3-setting" src="https://github.com/user-attachments/assets/81eda3f3-084c-4ac9-9e99-446afa1009dc" />
 
 ### Dynamic Out-of-the-box Config & Hardware Stability
 - **Zero-Config Startup**: The auto-generated `config.json` now ships with 6 industry-standard APIs instantly pre-configured: `OpenAI`, `Anthropic`, `Gemini`, `Ollama`, `LlamaCPP`, and `LMStudio`. New users just drop in their Key and go!
@@ -98,11 +118,9 @@ Release Notes: (Settings Hub & Core Architecture Overhaul)
 - **Precise Scene Timestamps**: Upgraded the internal template structure to use strict cut times (`[Shot N] At MM:SS.mmm, ...`) instead of floating time ranges, drastically improving timeline stability across multi-shot sequences.
 
 ### Full-Reference Programmatic Injection (Phase 2)
-
 - **Automated Summary Block**: The engine now dynamically scans generation intents and pre-loads the precise HuggingFace structure header (`summary:`) with tags like `[keyframe completion]` or `[audio reference]` based directly on the visual node's internal state.
 - **Retention & Preservation Analysis**: The prompt compiler now automatically generates the `retention_analysis` metadata block marking visual assets (`<Picture X>`) as `fully_preserved` and matching audio triggers without LLM hallucination.
 - **Dynamic Multimodal Budgeting**: Ref2VA and Omni-tasks are incredibly complex. The word budget bounds have been dramatically uncapped (350-500 words minimum) for tasks involving multi-tag usage to ensure high-fidelity scene orchestration.
-<img width="50%" alt="image" src="https://github.com/user-attachments/assets/5e7c2693-e36f-4535-8c1d-6faf6699427b" />
 
 ### Advanced Audio, Speaker Syncing & L2VA
 - **Audio-First Token Injection**: For the first time, when connecting audio directly to the `H3_Promptor`, the prompt compiles a dedicated `<Audio N>` referencing token in the `subject_definitions` mapping. The LLM now perfectly syncs physical actions to sound.
@@ -110,7 +128,9 @@ Release Notes: (Settings Hub & Core Architecture Overhaul)
 - **Introducing L2VA (Last Frame Inference)**: Unlocked the highly requested `Last-Frame-to-Video-Audio (L2VA)` task type. Users can now provide a single ending frame, and the `H3_Promptor` will instruct the LLM to choreograph a dynamic, forward-moving narrative that mathematically converges exactly onto the target pose at the very last second of the generation.
 
 ---
-## V1.1.0 (2026/08/07)
+
+## Release Notes: v1.1.0
+
 ### Infinite Dynamic Sockets (ComfyAPI v3 Autogrow)
 - **Limitless scaling**: Refactored the `H3_Vision_Analyzer` to completely utilize ComfyUI's native API v3 `Autogrow` inputs. The rigid 4-image limit is gone. Users can now infinitely chain as many `<Picture>` and `<Video>` references as their ComfyUI can handle without cluttering the screen with unused ports.
 
