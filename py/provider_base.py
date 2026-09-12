@@ -89,3 +89,8 @@ class LLMProvider(ABC):
     def get_model(self, override: str | None = None) -> str:
         """Get the model to use, with optional override."""
         return override or self.model
+
+    def unload(self) -> None:
+        """Unload model from VRAM/memory if supported by the provider."""
+        pass
+

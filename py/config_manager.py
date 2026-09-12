@@ -55,6 +55,7 @@ DEFAULT_CONFIG = {
             "api_base": "http://localhost:11434",
             "model": "llama3.2",
             "enabled": True,
+            "unload_after_run": True,
             "batch_vision": False
         },
         "prov_1720000005": {
@@ -64,6 +65,7 @@ DEFAULT_CONFIG = {
             "api_key": "sk-dummy",
             "model": "local-model",
             "enabled": False,
+            "unload_after_run": True,
             "batch_vision": False
         },
         "prov_1720000006": {
@@ -73,17 +75,15 @@ DEFAULT_CONFIG = {
             "api_key": "sk-dummy",
             "model": "local-model",
             "enabled": True,
+            "unload_after_run": True,
             "batch_vision": False
         },
         "prov_1720000007": {
             "name": "ComfyUI-QwenVL (Local / GGUF)",
             "type": "qwenvl",
-            "api_base": "",
-            "api_key": "",
             "model": "Qwen3VL-4B-Instruct-Q4_K_M.gguf",
             "enabled": False,
-            "disable_thinking": True,
-            "batch_vision": False,
+            "unload_after_run": True,
             "batch_size": 4
         },
     },

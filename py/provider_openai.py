@@ -27,9 +27,10 @@ RETRY_DELAY = 2.0
 class OpenAIProvider(LLMProvider):
     """OpenAI-compatible API provider."""
 
-    def __init__(self, api_base: str, api_key: str = "", model: str = "", disable_thinking: bool = True):
+    def __init__(self, api_base: str, api_key: str = "", model: str = "", disable_thinking: bool = True, unload_after_run: bool = True):
         super().__init__(api_base=api_base, api_key=api_key, model=model)
         self.disable_thinking = disable_thinking
+        self.unload_after_run = unload_after_run
 
     def chat(
         self,
@@ -209,3 +210,34 @@ class OpenAIProvider(LLMProvider):
             return response.ok
         except Exception:
             return False
+
+    def unload(self, model: str | None = None) -> None:
+        """Attempt to unload model if endpoint is a local engine (e.g. LM Studio / llama.cpp)."""
+        if not getattr(self, "unload_after_run", True):
+            return
+
+        api_lower = str(self.api_base or "").lower()
+        if not any(h in api_lower for h in ("localhost", "127.0.0.1", "192.168.", "10.0.", ":1234", ":8080")):
+            return
+
+        model_name = self.get_model(model)
+        base_clean = api_lower.rstrip("/")
+        host_base = base_clean[:-3] if base_clean.endswith("/v1") else base_clean
+
+        endpoints = [
+            f"{host_base}/api/v0/models/unload",
+            f"{base_clean}/models/unload",
+        ]
+        headers = {}
+        if self.api_key:
+            headers["Authorization"] = f"Bearer {self.api_key}"
+
+        for ep in endpoints:
+            try:
+                payload = {"model": model_name} if model_name else {}
+                resp = requests.post(ep, json=payload, headers=headers, timeout=2)
+                if resp.ok:
+                    log_debug(f"Local OpenAI-compatible model unloaded via {ep}")
+                    return
+            except Exception:
+                pass

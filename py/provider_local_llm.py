@@ -86,15 +86,15 @@ class LocalLLMProvider(LLMProvider):
 
     def __init__(
         self,
-        api_base: str = "",
-        api_key: str = "",
         model: str = "Huihui-Qwen3.5-4B-abliterated.Q4_K_M.gguf",
         disable_thinking: bool = True,
+        unload_after_run: bool = True,
         **kwargs
     ):
-        super().__init__(api_base=api_base, api_key=api_key, model=model)
+        super().__init__(api_base="", api_key="", model=model)
         self.type = "qwenvl"
         self.disable_thinking = disable_thinking
+        self.unload_after_run = unload_after_run
         self.extra_kwargs = kwargs
         self._qwenvl_dir: Optional[Path] = None
         self._engine = None
@@ -172,6 +172,10 @@ class LocalLLMProvider(LLMProvider):
                         return p
 
         return None
+
+    def is_available(self) -> bool:
+        """Check if ComfyUI-QwenVL custom node is installed and available."""
+        return self._find_qwenvl_custom_node() is not None
 
     def _get_models_dir(self) -> Path:
         """Find the root models directory for ComfyUI."""
@@ -576,7 +580,7 @@ class LocalLLMProvider(LLMProvider):
                 )
 
             # Strip thinking tags if requested
-            if self.disable_thinking and response_text:
+            if getattr(self, "disable_thinking", True) and response_text:
                 import re
                 response_text = re.sub(r"<think>.*?</think>", "", response_text, flags=re.DOTALL).strip()
 
@@ -592,6 +596,69 @@ class LocalLLMProvider(LLMProvider):
             log_error(err_msg)
             return LLMResponse(content="", model=target_model, error=err_msg)
 
+    def unload(self) -> None:
+        """Release resident GGUF model and free CUDA VRAM."""
+        if not getattr(self, "unload_after_run", True):
+            log_info("Local LLM unload skipped (unload_after_run is disabled).")
+            return
+
+        try:
+            engine = self._engine
+            if engine is None and self.is_available():
+                try:
+                    from qwenvl_engine import QwenVLEngine  # type: ignore
+                    if hasattr(QwenVLEngine, "_instance") and QwenVLEngine._instance is not None:
+                        engine = QwenVLEngine._instance
+                except Exception:
+                    pass
+
+            if engine is not None:
+                if hasattr(engine, "llm") and engine.llm is not None:
+                    try:
+                        if hasattr(engine.llm, "close"):
+                            engine.llm.close()
+                    except Exception as e:
+                        logger.debug(f"[H3-Promptor] Error closing Llama instance: {e}")
+                    engine.llm = None
+
+                if hasattr(engine, "chat_handler") and engine.chat_handler is not None:
+                    try:
+                        if hasattr(engine.chat_handler, "close"):
+                            engine.chat_handler.close()
+                        stack = getattr(engine.chat_handler, "_exit_stack", None)
+                        if stack is not None and hasattr(stack, "close"):
+                            stack.close()
+                    except Exception:
+                        pass
+                    engine.chat_handler = None
+
+                if hasattr(engine, "clear"):
+                    try:
+                        engine.clear()
+                    except Exception:
+                        pass
+
+                self._engine = None
+
+            log_info("Local LLM (QwenVL GGUF) unloaded successfully.")
+        except Exception as e:
+            log_warning(f"Error while unloading Local LLM: {e}")
+        finally:
+            import gc
+            gc.collect()
+            try:
+                import torch
+                if torch.cuda.is_available():
+                    torch.cuda.empty_cache()
+            except Exception:
+                pass
+            try:
+                from comfy import model_management
+                model_management.soft_empty_cache()
+            except Exception:
+                pass
+
 
 # Backward compatibility alias
 QwenVLProvider = LocalLLMProvider
+

@@ -27,9 +27,10 @@ RETRY_DELAY = 3.0
 class OllamaProvider(LLMProvider):
     """Ollama local inference provider."""
 
-    def __init__(self, api_base: str = "http://localhost:11434", **kwargs):
+    def __init__(self, api_base: str = "http://localhost:11434", unload_after_run: bool = True, **kwargs):
         # Ollama doesn't use API keys
         super().__init__(api_base=api_base, api_key="", **kwargs)
+        self.unload_after_run = unload_after_run
 
     def chat(
         self,
@@ -82,6 +83,8 @@ class OllamaProvider(LLMProvider):
                 "num_ctx": max(max_tokens * 2, 8192),
             },
         }
+        if self.unload_after_run:
+            payload["keep_alive"] = 0
 
         log_debug(f"Ollama request → {url} | model={model_name} | temp={temperature}")
 
@@ -206,3 +209,20 @@ class OllamaProvider(LLMProvider):
             return response.ok
         except Exception:
             return False
+
+    def unload(self, model: str | None = None) -> None:
+        """Explicitly unload model from Ollama VRAM."""
+        if not getattr(self, "unload_after_run", True):
+            return
+        model_name = self.get_model(model)
+        if not model_name:
+            return
+        try:
+            requests.post(
+                f"{self.api_base}/api/generate",
+                json={"model": model_name, "keep_alive": 0},
+                timeout=5,
+            )
+            log_debug(f"Ollama model '{model_name}' unloaded.")
+        except Exception as e:
+            log_debug(f"Ollama unload exception: {e}")

@@ -148,14 +148,14 @@ def sanitize_llm_output(text: str) -> str:
 # ---------------------------------------------------------------------------
 # LLM Provider Factory
 # ---------------------------------------------------------------------------
-from .provider_openai import OpenAIProvider
-from .provider_ollama import OllamaProvider
-from .provider_gemini import GeminiProvider
-from .provider_claude import ClaudeProvider
-from .provider_local_llm import LocalLLMProvider
-
 def _create_provider(provider_name: str, config_manager, api_key_override: str = ""):
     """Create an LLM provider instance from config."""
+    from .provider_openai import OpenAIProvider
+    from .provider_ollama import OllamaProvider
+    from .provider_gemini import GeminiProvider
+    from .provider_claude import ClaudeProvider
+    from .provider_local_llm import LocalLLMProvider
+
     provider_config = config_manager.get_provider_config(provider_name)
     if not provider_config:
         raise ValueError(f"Provider '{provider_name}' not configured.")
@@ -166,14 +166,15 @@ def _create_provider(provider_name: str, config_manager, api_key_override: str =
     provider_type = provider_config.get("type", "openai").lower()
 
     disable_thinking = provider_config.get("disable_thinking", True)
+    unload_after_run = provider_config.get("unload_after_run", True)
 
     if provider_type == "ollama":
-        return OllamaProvider(api_base=api_base, model=model)
+        return OllamaProvider(api_base=api_base, model=model, unload_after_run=unload_after_run)
     elif provider_type == "gemini":
         return GeminiProvider(api_base=api_base, api_key=api_key, model=model, disable_thinking=disable_thinking)
     elif provider_type in ["anthropic", "claude"]:
         return ClaudeProvider(api_base=api_base, api_key=api_key, model=model)
     elif provider_type in ["local_llm", "qwenvl", "local_qwenvl"]:
-        return LocalLLMProvider(api_base=api_base, api_key=api_key, model=model, disable_thinking=disable_thinking)
+        return LocalLLMProvider(model=model, disable_thinking=disable_thinking, unload_after_run=unload_after_run)
     else:
-        return OpenAIProvider(api_base=api_base, api_key=api_key, model=model, disable_thinking=disable_thinking)
+        return OpenAIProvider(api_base=api_base, api_key=api_key, model=model, disable_thinking=disable_thinking, unload_after_run=unload_after_run)

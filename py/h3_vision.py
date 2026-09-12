@@ -342,45 +342,40 @@ class H3_Vision(io.ComfyNode):
             config_manager = get_config_manager()
             provider_key = config_manager.find_provider_by_display_name(provider)
             provider_config = config_manager.get_provider_config(provider_key)
-            llm = _create_provider(provider_key, config_manager)
             
             batch_size = provider_config.get("batch_size")
             if batch_size is None:
                 batch_size = 1 if provider_config.get("batch_vision") is False else 4
 
-            if provider_key == "ollama" and model_management:
-                model_management.unload_all_models()
-                model_management.soft_empty_cache()
-
             ref_images_dict = {f"image_{i}": tensor for i, tensor in enumerate(parsed_images_for_vlm)}
             ref_videos_dict = {f"video_{i}": path for i, path in enumerate(parsed_videos_for_vlm)}
             ref_audios_dict = {f"audio_{i}": path for i, path in enumerate(parsed_audios_for_vlm)}
 
-            from .pipeline_engine import execute_vision_pipeline
-            final_dict, media_keys = execute_vision_pipeline(
-                provider_name_or_key=provider_key,
-                ref_images=ref_images_dict,
-                ref_videos=ref_videos_dict,
-                ref_audios=ref_audios_dict,
-                global_image_mode=global_image_mode,
-                global_video_mode=global_video_mode,
-                output_language=output_language,
-                temperature=temperature,
-                max_tokens=max_tokens,
-                custom_prompt_override=custom_prompt_override,
-                batch_size=batch_size,
-            )
+            try:
+                from .pipeline_engine import execute_vision_pipeline
+                final_dict, media_keys = execute_vision_pipeline(
+                    provider_name_or_key=provider_key,
+                    ref_images=ref_images_dict,
+                    ref_videos=ref_videos_dict,
+                    ref_audios=ref_audios_dict,
+                    global_image_mode=global_image_mode,
+                    global_video_mode=global_video_mode,
+                    output_language=output_language,
+                    temperature=temperature,
+                    max_tokens=max_tokens,
+                    custom_prompt_override=custom_prompt_override,
+                    batch_size=batch_size,
+                )
 
-            if not final_dict:
-                return io.NodeOutput("{}", out_images)
+                if not final_dict:
+                    return io.NodeOutput("{}", out_images)
 
-            final_dict["_media_keys"] = media_keys
-            final_output = json.dumps(final_dict, indent=4, ensure_ascii=False)
-
-            if provider_key == "ollama" and model_management:
-                model_management.soft_empty_cache()
-
-            return io.NodeOutput(final_output, out_images)
+                final_dict["_media_keys"] = media_keys
+                final_output = json.dumps(final_dict, indent=4, ensure_ascii=False)
+                return io.NodeOutput(final_output, out_images)
+            finally:
+                if model_management:
+                    model_management.soft_empty_cache()
 
         except Exception as e:
             log_error(str(e))

@@ -1,5 +1,7 @@
 import re
 import json
+import asyncio
+import aiohttp
 from server import PromptServer
 from aiohttp import web
 from .config_manager import get_config_manager
@@ -47,9 +49,6 @@ async def save_config(request):
             return web.json_response({"status": "error", "message": "Failed to save config.json"})
     except Exception as e:
         return web.json_response({"status": "error", "message": str(e)})
-
-import aiohttp
-import asyncio
 
 @PromptServer.instance.routes.post("/minimax-h3/test_connection")
 async def test_connection(request):
@@ -101,6 +100,12 @@ async def test_connection(request):
                     "status": "error",
                     "message": f"Test probe error: {str(e)}"
                 })
+            finally:
+                if hasattr(prov, "unload"):
+                    try:
+                        prov.unload()
+                    except Exception:
+                        pass
 
         if not api_base:
             if provider_type == "openai":
@@ -169,7 +174,8 @@ async def test_connection(request):
                         "model": model,
                         "messages": [{"role": "user", "content": "hi"}],
                         "stream": False,
-                        "options": {"num_predict": 1}
+                        "options": {"num_predict": 1},
+                        "keep_alive": 0,
                     }
         else:
             # 2. Fallback: No model specified, ping endpoint for connectivity
@@ -194,6 +200,23 @@ async def test_connection(request):
 
             async with req_ctx as resp:
                 if resp.status == 200:
+                    # If endpoint is local, ensure test probe doesn't leave model pinned in VRAM
+                    api_lower = str(api_base or "").lower()
+                    is_local_host = any(h in api_lower for h in ("localhost", "127.0.0.1", "192.168.", "10.0.", ":1234", ":8080"))
+                    if is_local_host and model:
+                        try:
+                            if provider_type == "ollama":
+                                await session.post(f"{api_base}/api/generate", json={"model": model, "keep_alive": 0}, timeout=3)
+                            elif provider_type == "openai":
+                                host_base = api_base[:-3] if api_base.endswith("/v1") else api_base
+                                for unload_ep in (f"{host_base}/api/v0/models/unload", f"{api_base}/models/unload"):
+                                    try:
+                                        await session.post(unload_ep, json={"model": model}, headers=headers, timeout=2)
+                                    except Exception:
+                                        pass
+                        except Exception:
+                            pass
+
                     if model:
                         return web.json_response({
                             "status": "success",
