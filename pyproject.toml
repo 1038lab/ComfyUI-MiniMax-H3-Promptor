@@ -1,8 +1,7 @@
 [project]
-name = "comfyui-minimax-h3-promptor"
-description = "ComfyUI-Minimax-H3-Promptor This custom node for ComfyUI provides automation suite for generating MiniMax H3 prompts."
+name = "ComfyUI-MiniMax-H3-Promptor"
+description = "ComfyUI-Minimax-H3-Promptor custom node for ComfyUI provides automation suite for generating MiniMax H3 prompts."
 version = "1.5.1"
-license = {file = "LICENSE"}
 
 dependencies = ["requests>=2.28.0"]
 
