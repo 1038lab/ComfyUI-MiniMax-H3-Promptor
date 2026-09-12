@@ -185,6 +185,31 @@ function createInput(type, currentVal, onChange) {
     return ipt;
 }
 
+function isLocalProvider(data) {
+    if (!data) return false;
+    const t = (data.type || '').toLowerCase();
+    const n = (data.name || '').toLowerCase();
+    const base = (data.api_base || '').toLowerCase();
+    return (
+        t === 'ollama' ||
+        t === 'qwenvl' ||
+        t === 'local_llm' ||
+        t === 'local_qwenvl' ||
+        n.includes('lmstudio') ||
+        n.includes('llamacpp') ||
+        n.includes('llama.cpp') ||
+        n.includes('ollama') ||
+        n.includes('qwenvl') ||
+        base.includes('localhost') ||
+        base.includes('127.0.0.1') ||
+        base.includes('192.168.') ||
+        base.includes('10.0.') ||
+        base.includes(':1234') ||
+        base.includes(':8080') ||
+        base.includes(':11434')
+    );
+}
+
 async function performTestConnection({ type, api_base, api_key, model }, btnElement) {
     btnElement.innerHTML = "<i class='pi pi-spin pi-spinner'></i> Testing...";
     try {
@@ -396,7 +421,7 @@ function renderSettingsPanel(container, config) {
                     <span class="minimax-toggle-slider"></span>
                 </label>
                 <div style="display:flex; flex-direction:column; gap:2px;">
-                    <strong>${displayName.toUpperCase()} <span style="font-size:10px; font-weight:normal; background:#444; padding:2px 4px; border-radius:3px;">${data.type || 'openai'}</span></strong>
+                    <strong>${displayName.toUpperCase()} <span style="font-size:10px; font-weight:500; color:#cbd5e1; background:rgba(255,255,255,0.08); border:1px solid rgba(255,255,255,0.18); padding:1px 6px; border-radius:3px; vertical-align:middle; margin-left:4px;">${data.type || 'openai'}</span></strong>
                     <small>Model: ${data.model || data.default_model || ""}</small>
                 </div>
             </div>
@@ -473,7 +498,8 @@ function renderEditor(parentCard, pName, pData, config, mainContainer, isNew = f
 
     // For backward compatibility, if it's not new and has no name, we default to showing the key pName
     const displayValue = pData.name || (isNew ? '' : pName);
-    const isLocal = (pData.type === 'local_llm' || pData.type === 'qwenvl');
+    const isLocalEngine = (pData.type === 'local_llm' || pData.type === 'qwenvl');
+    const isLocal = isLocalProvider(pData);
 
     form.innerHTML = `
         <div class="minimax-options-grid">
@@ -488,13 +514,13 @@ function renderEditor(parentCard, pName, pData, config, mainContainer, isNew = f
                     <option value="ollama" ${pData.type === 'ollama' ? 'selected' : ''}>ollama</option>
                     <option value="gemini" ${pData.type === 'gemini' ? 'selected' : ''}>gemini</option>
                     <option value="anthropic" ${(pData.type === 'claude' || pData.type === 'anthropic') ? 'selected' : ''}>anthropic</option>
-                    <option value="qwenvl" ${isLocal ? 'selected' : ''}>ComfyUI-QwenVL (Local / GGUF)</option>
+                    <option value="qwenvl" ${isLocalEngine ? 'selected' : ''}>ComfyUI-QwenVL (Local / GGUF)</option>
                 </select>
             </div>
         </div>
 
         <!-- Cloud credentials (Hidden for local_llm) -->
-        <div id="mm-cloud-fields" style="display:${isLocal ? 'none' : 'block'};">
+        <div id="mm-cloud-fields" style="display:${isLocalEngine ? 'none' : 'block'};">
             <div class="minimax-input-group" style="margin-top:8px;">
                 <label>API Base URL</label>
                 <input type="text" id="mm-f-base" value="${pData.api_base || ''}" placeholder="http://localhost:5000/v1" />
@@ -510,7 +536,7 @@ function renderEditor(parentCard, pName, pData, config, mainContainer, isNew = f
         </div>
 
         <!-- Local engine section (Shown for local_llm) -->
-        <div id="mm-local-fields" style="display:${isLocal ? 'block' : 'none'}; margin-top:8px; padding:10px; background:rgba(0,0,0,0.25); border-radius:6px; border:1px solid #444;">
+        <div id="mm-local-fields" style="display:${isLocalEngine ? 'block' : 'none'}; margin-top:8px; padding:10px; background:rgba(0,0,0,0.25); border-radius:6px; border:1px solid #444;">
             <div id="mm-engine-status" style="font-size:12px; margin-bottom:8px; display:flex; align-items:center; gap:6px;">
                 <i class="pi pi-spin pi-spinner"></i> Checking local engine...
             </div>
@@ -536,12 +562,19 @@ function renderEditor(parentCard, pName, pData, config, mainContainer, isNew = f
                 </label>
                 <label style="margin:0; font-weight:bold; font-size:13px; color:var(--input-text);">Enabled</label>
             </div>
-            <div id="mm-thinking-container" style="display:${(pData.type === 'ollama' || isLocal) ? 'none' : 'flex'}; align-items:center; gap:6px;" title="Disables deep thinking/reasoning mode on compatible models (e.g. SiliconFlow, DeepSeek, Qwen3, Gemini) to prevent token waste and timeouts.">
+            <div id="mm-thinking-container" style="display:${(pData.type === 'ollama' || isLocalEngine) ? 'none' : 'flex'}; align-items:center; gap:6px;" title="Disables deep thinking/reasoning mode on compatible models (e.g. SiliconFlow, DeepSeek, Qwen3, Gemini) to prevent token waste and timeouts.">
                 <label class="minimax-toggle">
                     <input type="checkbox" id="mm-f-disable-thinking" ${pData.disable_thinking !== false ? 'checked' : ''} />
                     <span class="minimax-toggle-slider"></span>
                 </label>
                 <label style="margin:0; font-weight:bold; font-size:13px; color:var(--input-text);">Disable Thinking (Fast)</label>
+            </div>
+            <div id="mm-unload-container" style="display:${isLocal ? 'flex' : 'none'}; align-items:center; gap:6px;" title="Automatically unloads the model from VRAM after running to free memory for MiniMax video generation.">
+                <label class="minimax-toggle">
+                    <input type="checkbox" id="mm-f-unload" ${pData.unload_after_run !== false ? 'checked' : ''} />
+                    <span class="minimax-toggle-slider"></span>
+                </label>
+                <label style="margin:0; font-weight:bold; font-size:13px; color:var(--input-text);">⚡ Unload VRAM After Run</label>
             </div>
         </div>
         <div style="display:flex; justify-content:flex-end; gap:8px; margin-top: 12px;">
@@ -623,37 +656,59 @@ function renderEditor(parentCard, pName, pData, config, mainContainer, isNew = f
         }
     }
 
-    if (isLocal) {
+    if (isLocalEngine) {
         loadLocalModels();
+    }
+
+    function updateFieldVisibility() {
+        const typeEl = document.getElementById("mm-f-type");
+        const baseEl = document.getElementById("mm-f-base");
+        const nameEl = document.getElementById("mm-f-name");
+        const curType = typeEl ? typeEl.value : "";
+        const curBase = baseEl ? baseEl.value.trim() : "";
+        const curName = nameEl ? nameEl.value.trim() : "";
+
+        const localEngineNow = curType === "local_llm" || curType === "qwenvl";
+        const isLocalNow = isLocalProvider({ type: curType, api_base: curBase, name: curName, unload_after_run: pData.unload_after_run });
+
+        const thinkingCont = document.getElementById("mm-thinking-container");
+        const unloadCont = document.getElementById("mm-unload-container");
+        const cloudFields = document.getElementById("mm-cloud-fields");
+        const localFields = document.getElementById("mm-local-fields");
+
+        if (thinkingCont) thinkingCont.style.display = (curType === "ollama" || localEngineNow) ? "none" : "flex";
+        if (unloadCont) unloadCont.style.display = isLocalNow ? "flex" : "none";
+        if (cloudFields) cloudFields.style.display = localEngineNow ? "none" : "block";
+        if (localFields) localFields.style.display = localEngineNow ? "block" : "none";
+
+        if (localEngineNow) {
+            loadLocalModels();
+        }
     }
 
     const typeSelect = document.getElementById("mm-f-type");
     if (typeSelect) {
-        typeSelect.onchange = (e) => {
-            const localMode = e.target.value === "local_llm" || e.target.value === "qwenvl";
-            const thinkingCont = document.getElementById("mm-thinking-container");
-            const cloudFields = document.getElementById("mm-cloud-fields");
-            const localFields = document.getElementById("mm-local-fields");
-            
-            if (thinkingCont) {
-                thinkingCont.style.display = (e.target.value === "ollama" || localMode) ? "none" : "flex";
-            }
-            if (cloudFields) cloudFields.style.display = localMode ? "none" : "block";
-            if (localFields) localFields.style.display = localMode ? "block" : "none";
+        typeSelect.onchange = updateFieldVisibility;
+    }
 
-            if (localMode) {
-                loadLocalModels();
-            }
-        };
+    const baseInput = document.getElementById("mm-f-base");
+    if (baseInput) {
+        baseInput.oninput = updateFieldVisibility;
+    }
+
+    const nameInput = document.getElementById("mm-f-name");
+    if (nameInput) {
+        nameInput.oninput = updateFieldVisibility;
     }
 
     const cloudModelInput = document.getElementById("mm-f-model");
     if (cloudModelInput) {
         cloudModelInput.oninput = (e) => {
-            const nameInput = document.getElementById("mm-f-name");
-            if (nameInput && isNew) {
-                nameInput.value = e.target.value.trim().toLowerCase();
+            const nInput = document.getElementById("mm-f-name");
+            if (nInput && isNew) {
+                nInput.value = e.target.value.trim().toLowerCase();
             }
+            updateFieldVisibility();
         };
     }
 
@@ -690,16 +745,33 @@ function renderEditor(parentCard, pName, pData, config, mainContainer, isNew = f
             pId = "prov_" + Date.now();
         }
 
-        config.providers[pId] = {
+        const unloadEl = document.getElementById("mm-f-unload");
+        const curBaseVal = curIsLocal ? "" : document.getElementById("mm-f-base").value.trim();
+        const curIsAnyLocal = isLocalProvider({ type: curType, api_base: curBaseVal, name: title });
+
+        const newProv = {
             name: title,
             type: curType,
-            api_base: curIsLocal ? "" : document.getElementById("mm-f-base").value.trim(),
-            api_key: curIsLocal ? "" : document.getElementById("mm-f-key").value.trim(),
             model: curModel,
             enabled: document.getElementById("mm-f-enabled").checked,
-            disable_thinking: document.getElementById("mm-f-disable-thinking").checked,
             batch_size: parseInt(document.getElementById("mm-f-batch-size").value, 10) || 4
         };
+
+        if (curIsLocal) {
+            newProv.unload_after_run = unloadEl ? unloadEl.checked : true;
+        } else if (curType === "ollama") {
+            newProv.api_base = curBaseVal;
+            newProv.unload_after_run = unloadEl ? unloadEl.checked : true;
+        } else {
+            newProv.api_base = curBaseVal;
+            newProv.api_key = document.getElementById("mm-f-key").value.trim();
+            newProv.disable_thinking = document.getElementById("mm-f-disable-thinking").checked;
+            if (curIsAnyLocal) {
+                newProv.unload_after_run = unloadEl ? unloadEl.checked : true;
+            }
+        }
+
+        config.providers[pId] = newProv;
 
         if (await saveConfig(config)) {
             renderSettingsPanel(mainContainer, config);
