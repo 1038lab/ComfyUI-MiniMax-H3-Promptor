@@ -1,4 +1,17 @@
 # ComfyUI-Minimax-H3-Promptor Update Log
+---
+
+## v1.5.1 (2026/09/12)
+
+### 🧹 Native VRAM Unloading & Isolation Fix 
+
+- **Setting Panel Control Toggle (`⚡ Unload VRAM After Run`)**: Added an explicit VRAM auto-unload toggle switch in the ComfyUI MiniMax H3 API Management settings for all local providers (`ComfyUI-QwenVL`, `Ollama`, `LM Studio`, `llama.cpp`), **enabled by default**. Settings can be toggled and persisted directly via the Edit interface.
+- **Local Model Auto-Unload (`qwenvl` / GGUF)**: Fixed the critical issue where local GGUF models via `ComfyUI-QwenVL` remained resident in GPU memory after prompt generation. The provider now cleanly closes the underlying C++ `Llama` CUDA context (`llm.close()`), closes multimodal handlers, clears Python singleton engine references, and flushes PyTorch CUDA caches.
+- **Instant Ollama Release (`keep_alive: 0`)**: Added native `"keep_alive": 0` support to Ollama payloads, enabling Ollama's daemon to automatically release VRAM immediately upon completing analysis or generation.
+- **Node-Level Exception-Safe Lifecycle**: Both `H3_Vision` and `H3_Promptor` (as well as interactive Refine) now wrap execution in robust `try ... finally:` blocks. Unloading triggers automatically at the end of the node's run without redundant model reloads during multi-image sequential vision analysis.
+- **ComfyUI Model Protection**: Completely removed legacy calls to `model_management.unload_all_models()`, ensuring that ComfyUI's internal diffusion/checkpoint models (MiniMax, Wan 2.1, Flux, VAE) are never accidentally evicted from VRAM when using local LLMs.
+
+<img width="1441" height="489" alt="ComfyUI-EZi-screenshot-20260912_113333" src="https://github.com/user-attachments/assets/d39a1e09-2c52-4ab2-83f7-04060de9eed6" />
 
 ---
 
