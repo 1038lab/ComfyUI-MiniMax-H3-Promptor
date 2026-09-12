@@ -6,6 +6,17 @@ This project provides a robust, decoupled architecture separating **multimodal v
 
 ![ComfyUI MiniMax H3-Promptor](example_workflows/MiniMax-H3-Promptor.jpg)
 
+## What's New in V1.5.1 (2026/09/12)
+
+### Native VRAM Unloading & Isolation for Local Models
+* **Automatic VRAM Release**: Local models (`ComfyUI-QwenVL`, `Ollama`, `LM Studio`, `llama.cpp`) now immediately unload from GPU memory after inference, preventing downstream MiniMax video generation crashes (OOM).
+* **ComfyUI Model Protection**: Isolates local LLM release without evicting ComfyUI's internal diffusion or VAE models.
+* **Configurable**: Enabled by default; easily toggled via the API Management settings panel (`Edit` provider).
+
+👉 **[Read the full v1.5.1 Release Notes & Technical Details (updates.md)](updates.md#v151-20260912)**
+
+---
+
 ## What's New in V1.5.0 (2026/09/03)
 
 ### ✍️ All-New Manual Prompt Composer & Cinematic Visual Upgrades
