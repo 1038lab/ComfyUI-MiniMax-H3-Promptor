@@ -34,6 +34,7 @@
       "api_base": "http://localhost:11434",
       "model": "llama3.2",
       "enabled": true,
+      "unload_after_run": true,
       "batch_vision": false
     },
     "prov_1720000005": {
@@ -43,6 +44,7 @@
       "api_key": "sk-dummy",
       "model": "local-model",
       "enabled": false,
+      "unload_after_run": true,
       "batch_vision": false
     },
     "prov_1720000006": {
@@ -52,7 +54,16 @@
       "api_key": "sk-dummy",
       "model": "local-model",
       "enabled": true,
+      "unload_after_run": true,
       "batch_vision": false
+    },
+    "prov_1720000007": {
+      "name": "ComfyUI-QwenVL (Local / GGUF)",
+      "type": "qwenvl",
+      "model": "Qwen3VL-4B-Instruct-Q4_K_M.gguf",
+      "enabled": false,
+      "unload_after_run": true,
+      "batch_size": 4
     }
   },
   "defaults": {

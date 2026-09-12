@@ -4,7 +4,7 @@ import sys
 from pathlib import Path
 
 __repo_name__ = "ComfyUI-Minimax-H3-Promptor"
-__version__ = "1.5.0"
+__version__ = "1.5.1"
 
 # Locate current and node directories
 current_dir = Path(__file__).parent
